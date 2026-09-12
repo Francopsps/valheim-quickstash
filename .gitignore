@@ -1,0 +1,17 @@
+# Assemblies del juego. Son archivos de Valheim, pesan cientos de MB y no se redistribuyen:
+# cada quien copia su valheim_Data\Managed a refs\Managed (ver docs/api-1.0.7.md).
+refs/
+Managed.rar
+
+# Mods de terceros, solo material de referencia para comparar.
+mods_server/
+
+# Salida de compilacion
+**/bin/
+**/obj/
+*.zip
+QuickStash/package/*.dll
+QuickStash/package/*.pdb
+
+# Varios
+*.user

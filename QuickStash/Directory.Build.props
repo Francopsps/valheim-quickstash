@@ -1,0 +1,13 @@
+<Project>
+
+  <!--
+    Ruta a la carpeta Managed del juego (valheim_Data\Managed).
+    Se puede sobreescribir con una variable de entorno o con -p:ValheimManaged=...
+    para compilar en otro PC sin tocar el repo.
+  -->
+  <PropertyGroup>
+    <ValheimManaged Condition="'$(ValheimManaged)' == ''">$(MSBuildThisFileDirectory)..\refs\Managed</ValheimManaged>
+    <QuickStashPackageDir>$(MSBuildThisFileDirectory)package\</QuickStashPackageDir>
+  </PropertyGroup>
+
+</Project>

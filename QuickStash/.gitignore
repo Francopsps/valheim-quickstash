@@ -1,0 +1,6 @@
+bin/
+obj/
+*.user
+package/*.dll
+package/*.pdb
+package/*.zip
