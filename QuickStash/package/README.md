@@ -90,8 +90,12 @@ hambre y no hay comida en el piso, sacan una unidad del cofre y se la comen.
 - **Con que uno solo de ustedes tenga el mod, alcanza.** El mod deja la comida en el piso y
   después come el animal por su cuenta, con código del juego base: los animales se alimentan
   aunque el dueño del corral no tenga QuickStash instalado.
-- **Ojo con la cría**: si les dejás comida infinita al lado, se van a reproducir sin parar. Si no
-  querés eso, sacá el cofre o usá `Animales > Activado = false`.
+- **Sobre la cría**: al mantenerlos saciados se van a reproducir, pero el juego ya lo limita solo
+  a 4 criaturas en 10 m, así que el corral se llena hasta ese tope y ahí se queda. (Corrijo lo que
+  decía antes: no es ilimitado.)
+- Si no querés que coman algo puntual aunque su especie lo acepte, ponelo en
+  `Animales > ItemsExcluidos`. Es una lista aparte de la global, así que podés proteger las
+  salchichas de los jabalíes sin sacarlas del guardado rápido.
 
 ### Craftear desde cofres
 
@@ -135,7 +139,8 @@ Lo que probablemente quieras tocar:
 | `Animales > Rango` | 10 | Metros entre el animal y el cofre |
 | `Animales > IntervaloSegundos` | 5 | Cada cuánto se revisan los animales cercanos |
 | `Animales > MaxPorCiclo` | 3 | A cuántos animales se les deja comida por revisión |
-| `Animales > LogDeComida` | false | Anotar en el log cada vez que un animal saca comida |
+| `Animales > ItemsExcluidos` | vacío | Comida que los animales nunca pueden agarrar |
+| `Animales > LogDeComida` | **true** | Anotar en el log cada vez que un animal saca comida |
 | `MaxCofresPorAccion` | 32 | Tope de cofres por pulsación |
 | `LogDeMovimientos` | **true** | Anota en el log cada objeto que se mueve, con cofre, posición y hora |
 | `LogDeRendimiento` | false | Escribe en el log los ms y la cantidad de cofres de cada acción |

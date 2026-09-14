@@ -28,6 +28,9 @@ namespace QuickStash.Core
 
         private static float _nextRun;
 
+        /// <summary>Para no repetir "no hay animales" cada 5 s: solo se avisa al cambiar de estado.</summary>
+        private static bool _reportedEmpty;
+
         public static void Tick()
         {
             if (!PluginConfig.DebugTiming.Value)
@@ -93,9 +96,18 @@ namespace QuickStash.Core
 
             if (tamedNearby == 0)
             {
-                Plugin.Log.LogInfo($"[diag] no hay animales domesticados a menos de {ScanRange:F0} m.");
+                if (!_reportedEmpty)
+                {
+                    _reportedEmpty = true;
+                    Plugin.Log.LogInfo($"[diag] no hay animales domesticados a menos de {ScanRange:F0} m.");
+                }
+
+                return;
             }
-            else if (tamedNearby > reported)
+
+            _reportedEmpty = false;
+
+            if (tamedNearby > reported)
             {
                 Plugin.Log.LogInfo($"[diag] ... y {tamedNearby - reported} animal(es) mas, no listados.");
             }
@@ -130,7 +142,9 @@ namespace QuickStash.Core
                 for (int i = 0; i < monster.m_consumeItems.Count; i++)
                 {
                     ItemDrop food = monster.m_consumeItems[i];
-                    if (food == null)
+
+                    // Un mod de criaturas puede dejar entradas incompletas en la lista.
+                    if (food == null || food.m_itemData?.m_shared == null)
                     {
                         continue;
                     }
@@ -176,6 +190,7 @@ namespace QuickStash.Core
         public static void Reset()
         {
             _nextRun = 0f;
+            _reportedEmpty = false;
             ContainerBuffer.Clear();
         }
     }

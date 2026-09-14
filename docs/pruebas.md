@@ -285,3 +285,21 @@ que faltan = veces que comieron. Revisar el log por `Fallo al dar de comer desde
 **N9 — cria.** Con comida disponible se reproducen normalmente. Es lo esperado, pero conviene
 medir a que ritmo antes de dejarlo fijo en el servidor.
 
+**N10 — el crítico de la auditoría: goteo sin freno.** Es la prueba más importante de esta versión.
+1. Corral con 2-3 jabalíes hambrientos **dentro de la base**, cofre propio al lado con 500 de comida.
+2. Tirar al piso **más de 40 objetos NO comestibles** (madera, piedra, plumas) en 5 m alrededor de
+   los animales. Dentro de una base eso no despawnea nunca.
+3. Encerrarlos para que no lleguen a la comida, o esperar un raid (durante un raid no comen).
+4. `LogDeComida = true`. Dejar 15 minutos.
+5. **Falla si:** aparecen más de un par de líneas `ANIMAL <-` en esos 15 minutos, o si al bajar al
+   corral hay una pila creciente de comida. Con el arreglo tienen que ser 0 mientras haya comida
+   en el piso.
+
+**N11 — doble tiro entre clientes.** Dos jugadores con el mod, quietos, a la misma distancia
+(~8 m) a cada lado del mismo animal hambriento, cada uno con su cofre. Ambos con `LogDeComida`.
+Esperar 5 minutos. **Falla si:** los dos logs muestran líneas `ANIMAL <-` para el mismo animal de
+forma repetida. Repetir caminando en círculo alrededor del animal, que es donde más pega el lag.
+
+**N12 — aislamiento.** Si aparece cualquier `Fallo en alimentacion de animales` en el log, probar
+enseguida la tecla `N`. Tiene que seguir funcionando.
+

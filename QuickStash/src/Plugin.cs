@@ -16,7 +16,7 @@ namespace QuickStash
     {
         public const string PluginGuid = "com.valheimcrew.quickstash";
         public const string PluginName = "QuickStash";
-        public const string PluginVersion = "1.3.0";
+        public const string PluginVersion = "1.3.1";
 
         internal static ManualLogSource Log;
 
@@ -106,12 +106,28 @@ namespace QuickStash
 
             FavoriteStore.Tick();
             StashService.Tick();
-            AnimalFeeder.Tick();
-            AnimalDiagnostics.Tick();
+
+            // Aislados: una excepcion aca abortaria el resto del Update —incluido el atajo de
+            // guardado— y Unity la loguearia 60 veces por segundo. Los parches ya tienen su
+            // propio try/catch; estos corren desde Update y necesitan el suyo.
+            SafeTick(AnimalFeeder.Tick, "alimentacion de animales");
+            SafeTick(AnimalDiagnostics.Tick, "diagnostico de animales");
 
             if (PluginConfig.Hotkey.Value.IsDown() && !IsTyping())
             {
                 StashService.Run();
+            }
+        }
+
+        private static void SafeTick(Action tick, string what)
+        {
+            try
+            {
+                tick();
+            }
+            catch (Exception e)
+            {
+                Log.LogError($"Fallo en {what}: {e}");
             }
         }
 

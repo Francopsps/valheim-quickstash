@@ -65,11 +65,13 @@ namespace QuickStash.Config
         public static ConfigEntry<float> AnimalIntervalSeconds;
         public static ConfigEntry<int> AnimalMaxPerCycle;
         public static ConfigEntry<bool> AnimalLog;
+        public static ConfigEntry<string> AnimalExcludedItems;
 
         public static ConfigEntry<int> CacheMs;
         public static ConfigEntry<int> MaxScanned;
 
         private static HashSet<string> _excluded = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private static HashSet<string> _excludedForAnimals = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private static Color _favColor = new Color(1f, 0.82f, 0.16f);
         private static Color _slotColor = new Color(0.30f, 0.80f, 1f);
 
@@ -159,12 +161,14 @@ namespace QuickStash.Config
                     new AcceptableValueRange<float>(1f, 30f)));
             AnimalIntervalSeconds = cfg.Bind(Animales, "IntervaloSegundos", 5f,
                 new ConfigDescription("Cada cuanto se revisan los animales cercanos. Subirlo baja el uso de CPU.",
-                    new AcceptableValueRange<float>(1f, 30f)));
+                    new AcceptableValueRange<float>(3f, 30f)));
             AnimalMaxPerCycle = cfg.Bind(Animales, "MaxPorCiclo", 3,
-                new ConfigDescription("A cuantos animales se les deja comida como mucho en cada revision.",
-                    new AcceptableValueRange<int>(1, 10)));
-            AnimalLog = cfg.Bind(Animales, "LogDeComida", false,
-                "Anota tambien en el log cada vez que un animal saca comida de un cofre. Apagado por defecto para no tapar el resto del registro.");
+                new ConfigDescription("A cuantos animales se les deja comida como mucho en cada revision. Cada uno implica instanciar un objeto en el mundo y guardar un cofre, y eso si viaja por la red.",
+                    new AcceptableValueRange<int>(1, 5)));
+            AnimalLog = cfg.Bind(Animales, "LogDeComida", true,
+                "Anota en el log cada vez que un animal saca comida de un cofre, con la etiqueta ANIMAL. Dejalo activado: esta funcion consume comida sola y sin que nadie la pida, asi que es la que mas necesita dejar rastro.");
+            AnimalExcludedItems = cfg.Bind(Animales, "ItemsExcluidos", "",
+                "Nombres de prefab separados por coma que los animales nunca pueden comer, aunque su especie los acepte. Se suma a la lista global. Ejemplo: SerpentMeatCooked,SausageS");
 
             MaxScanned = cfg.Bind(Rendimiento, "MaxCofresEscaneados", 128,
                 new ConfigDescription("Tope de cofres que se LEEN por consulta. Leer no cuesta red (el inventario ya esta replicado), asi que puede ser alto: es lo que evita que se ignoren cofres cuando hay muchos cerca.",
@@ -178,6 +182,7 @@ namespace QuickStash.Config
             SanitizeModifiers();
 
             ExcludedItems.SettingChanged += (_, __) => RebuildExcluded();
+            AnimalExcludedItems.SettingChanged += (_, __) => RebuildExcluded();
             FavoriteColor.SettingChanged += (_, __) => RebuildColors();
             SlotFavoriteColor.SettingChanged += (_, __) => RebuildColors();
             RebuildExcluded();
@@ -205,8 +210,16 @@ namespace QuickStash.Config
             }
         }
 
+        /// <summary>Los animales tienen su propia lista ademas de la global: excluir una comida
+        /// del guardado rapido y protegerla de los jabalies son cosas distintas.</summary>
+        public static bool IsExcludedForAnimals(ItemDrop.ItemData item)
+        {
+            return Matches(_excludedForAnimals, item);
+        }
+
         private static void RebuildExcluded()
         {
+            _excludedForAnimals = Parse(AnimalExcludedItems.Value);
             _excluded = new HashSet<string>(
                 (ExcludedItems.Value ?? string.Empty)
                     .Split(',')
@@ -233,17 +246,29 @@ namespace QuickStash.Config
 
         public static bool IsExcluded(ItemDrop.ItemData item)
         {
-            if (_excluded.Count == 0 || item == null)
+            return Matches(_excluded, item);
+        }
+
+        private static HashSet<string> Parse(string value)
+        {
+            return new HashSet<string>(
+                (value ?? string.Empty).Split(',').Select(s => s.Trim()).Where(s => s.Length > 0),
+                StringComparer.OrdinalIgnoreCase);
+        }
+
+        private static bool Matches(HashSet<string> names, ItemDrop.ItemData item)
+        {
+            if (names.Count == 0 || item == null)
             {
                 return false;
             }
 
-            if (item.m_dropPrefab != null && _excluded.Contains(item.m_dropPrefab.name))
+            if (item.m_dropPrefab != null && names.Contains(item.m_dropPrefab.name))
             {
                 return true;
             }
 
-            return item.m_shared != null && _excluded.Contains(item.m_shared.m_name);
+            return item.m_shared != null && names.Contains(item.m_shared.m_name);
         }
     }
 }

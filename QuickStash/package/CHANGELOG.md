@@ -77,3 +77,22 @@ Correcciones de la auditoria previa al reparto. Nada de esto se probo in-game to
   si ya hay en el piso.
 - Opciones nuevas: Animales > IntervaloSegundos y Animales > MaxPorCiclo.
 
+## 1.3.1
+Correcciones de la auditoria de seguridad sobre master.
+
+- **Critico: los animales podian vaciar un cofre sin freno.** La unica defensa contra tirar
+  comida en cada ciclo era un barrido de fisica acotado a 32 objetos. En un corral con basura
+  tirada —tipico despues de un raid, y dentro de una base lo tirado no despawnea— ese barrido se
+  truncaba, no veia la comida que ya estaba en el piso, y seguia sacando del cofre
+  indefinidamente. Ahora el buffer es de 256 y, si aun asi se satura, se asume que hay comida en
+  vez de lo contrario.
+- Cooldown de 10 s por animal tras darle de comer, para que el freno no dependa de un solo
+  chequeo.
+- La eleccion de que jugador alimenta ya no depende solo de la distancia: con posiciones
+  replicadas y con lag, dos jugadores casi equidistantes podian creerse ambos el mas cercano.
+- No se le tira comida a un animal muerto.
+- LogDeComida pasa a estar activado por defecto: es la funcion que mas necesita dejar rastro.
+- Lista de exclusion propia para animales, separada de la global.
+- Los ciclos de animales corren aislados: una excepcion ahi ya no mata el atajo de guardado.
+- El diagnostico deja de repetir "no hay animales" cada 5 segundos.
+

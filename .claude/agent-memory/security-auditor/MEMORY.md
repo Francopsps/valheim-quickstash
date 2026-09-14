@@ -1,0 +1,4 @@
+- [Decisiones de diseño ya cerradas en QuickStash](quickstash-settled-design.md) — lo que NO hay que volver a reportar como hallazgo.
+- [Invariantes de QuickStash ya verificados](quickstash-verified-invariants.md) — spot-check en vez de re-auditar desde cero.
+- [Gotchas del vanilla de Valheim 1.0.7](valheim-vanilla-gotchas.md) — comportamientos confirmados decompilando (DropItem, TimedDestruction, RemoveItem, MonsterAI).
+- [Workflow de decompilado y build](valheim-decompile-workflow.md) — comandos exactos, y por que el mod ve miembros privados (Publicizer).
