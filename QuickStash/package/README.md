@@ -12,7 +12,7 @@ Mod de cliente para Valheim 1.0. Hace seis cosas:
 5. **Hornos automáticos**: un cofre al lado de una fundición o un horno de carbón lo carga solo
    con combustible y mineral.
 6. **Animales que comen del cofre**: los domesticados sacan comida de un cofre cercano cuando
-   tienen hambre. *(Experimental, rama `feature/animales-comen-de-cofres`.)*
+   tienen hambre.
 
 Está pensado para un servidor con mucha gente: no agrega tráfico de red propio, no toca el
 servidor y nunca escribe en un cofre que otro jugador tenga abierto.
@@ -76,7 +76,7 @@ Otras dos cosas que conviene saber:
 - **Solo actúa el jugador más cercano al horno**, así que aunque los 14 tengan el mod, un horno
   lo alimenta un solo cliente.
 
-### Animales que comen del cofre *(experimental)*
+### Animales que comen del cofre
 
 Poné un cofre a menos de 10 m de tus jabalíes, lobos o lo que tengas domesticado. Cuando les da
 hambre y no hay comida en el piso, sacan una unidad del cofre y se la comen.

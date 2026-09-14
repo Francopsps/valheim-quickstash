@@ -66,7 +66,7 @@ Correcciones de la auditoria previa al reparto. Nada de esto se probo in-game to
   hambriento no comio (no hay cofre, el cofre es de otro jugador, o la comida no le gusta) y
   vuelca una vez por especie la lista real de lo que come.
 
-## 1.3.0 (experimental)
+## 1.3.0
 - **Arreglado: los animales no comian en el servidor.** El enganche anterior colgaba de la IA del
   animal, que Valheim solo ejecuta en el cliente dueno de su ZDO. Con varios jugadores, el que
   esta parado al lado del corral tipicamente NO es el dueno, asi que el codigo no corria nunca.

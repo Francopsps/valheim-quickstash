@@ -253,7 +253,7 @@ cola + carbón producido tiene que cerrar en 100. Revisar el log por cualquier
 `MaxCofresPorAccion = 4`, rodearse de 20 cofres que todos tengan madera y guardar. El log tiene
 que decir `con coincidencia 20 | pedidos 4 (tope 4)`.
 
-## N. Animales que comen del cofre (rama experimental)
+## N. Animales que comen del cofre
 
 El primer intento fallo en el servidor porque el codigo colgaba de la IA del animal, que solo
 corre en el cliente dueno de su ZDO. Estas pruebas van **en el servidor**, no en solitario: en
