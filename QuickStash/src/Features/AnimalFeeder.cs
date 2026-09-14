@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using HarmonyLib;
 using QuickStash.Config;
 using QuickStash.Core;
@@ -32,38 +33,51 @@ namespace QuickStash.Features
     /// - BaseAI.UpdateAI sale temprano si !m_nview.IsOwner(), asi que toda esta rama corre solo
     ///   en el cliente dueno del animal: exactamente uno, sin coordinar nada.
     /// - Solo se usan cofres que ya son nuestros; no se le arrebata la propiedad a nadie.
+    ///
+    /// Diagnostico: con LogDeRendimiento activo se explica en el log POR QUE no se alimento, y
+    /// se lista una vez el menu real de cada especie. Esa lista vive en los prefabs del juego,
+    /// no en el codigo, asi que es la unica forma de saber que come cada bicho.
     /// </summary>
     internal static class AnimalFeeder
     {
         private static readonly List<Container> Buffer = new List<Container>(16);
         private static readonly List<ItemDrop.ItemData> ItemBuffer = new List<ItemDrop.ItemData>(32);
-
-        public static bool Active(MonsterAI ai)
-        {
-            if (!PluginConfig.Enabled.Value || !PluginConfig.FeedAnimals.Value || ai == null)
-            {
-                return false;
-            }
-
-            Tameable tameable = ai.m_tamable;
-            return tameable != null && tameable.IsTamed() && tameable.IsHungry();
-        }
+        private static readonly HashSet<string> LoggedMenus = new HashSet<string>(StringComparer.Ordinal);
+        private static readonly StringBuilder MenuBuilder = new StringBuilder(128);
 
         /// <summary>
         /// Devuelve la comida ya tirada en el piso para que el animal la coma, o null si no hay
         /// nada utilizable cerca.
         /// </summary>
-        public static ItemDrop TakeFromContainer(MonsterAI ai)
+        public static ItemDrop TryFeed(MonsterAI ai)
         {
+            if (!PluginConfig.Enabled.Value || !PluginConfig.FeedAnimals.Value || ai == null)
+            {
+                return null;
+            }
+
+            Tameable tameable = ai.m_tamable;
+            if (tameable == null || !tameable.IsTamed())
+            {
+                return null;
+            }
+
+            if (!tameable.IsHungry())
+            {
+                return null;
+            }
+
             long playerId = ContainerAccess.LocalPlayerId();
-            Vector3 position = ai.transform.position;
 
             ContainerRegistry.Query(
-                position,
+                ai.transform.position,
                 PluginConfig.AnimalFeedRange.Value,
                 PluginConfig.MaxScanned.Value,
                 playerId,
                 Buffer);
+
+            int owned = 0;
+            int withFood = 0;
 
             foreach (Container container in Buffer)
             {
@@ -74,23 +88,41 @@ namespace QuickStash.Features
                     continue;
                 }
 
+                owned++;
+
                 Inventory source = container.GetInventory();
                 if (source == null)
                 {
                     continue;
                 }
 
-                ItemDrop dropped = TakeOneFrom(ai, container, source);
+                ItemDrop.ItemData food = FindFood(ai, source);
+                if (food == null)
+                {
+                    continue;
+                }
+
+                withFood++;
+
+                ItemDrop dropped = DropOne(ai, container, source, food);
                 if (dropped != null)
                 {
+                    if (PluginConfig.DebugTiming.Value)
+                    {
+                        Plugin.Log.LogInfo(
+                            $"[animal] {Name(ai)}: saco {MoveLog.Localize(food.m_shared.m_name)} " +
+                            $"de un cofre a {Distance(ai, container):F1} m");
+                    }
+
                     return dropped;
                 }
             }
 
+            Explain(ai, owned, withFood);
             return null;
         }
 
-        private static ItemDrop TakeOneFrom(MonsterAI ai, Container container, Inventory source)
+        private static ItemDrop.ItemData FindFood(MonsterAI ai, Inventory source)
         {
             ItemBuffer.Clear();
             ItemBuffer.AddRange(source.GetAllItems());
@@ -115,7 +147,7 @@ namespace QuickStash.Features
                         continue;
                     }
 
-                    return DropOne(ai, container, source, item);
+                    return item;
                 }
             }
             finally
@@ -155,6 +187,95 @@ namespace QuickStash.Features
             MoveLog.RecordAnimalFeed(container, item.m_shared.m_name, 1);
             return dropped;
         }
+
+        /// <summary>
+        /// Explica en el log por que un animal hambriento no comio. Sin esto la funcion es una
+        /// caja negra: no hay forma de distinguir "no hay cofres cerca" de "el cofre es de otro
+        /// jugador" de "esa comida no le gusta".
+        /// </summary>
+        private static void Explain(MonsterAI ai, int owned, int withFood)
+        {
+            if (!PluginConfig.DebugTiming.Value)
+            {
+                return;
+            }
+
+            string reason;
+            if (Buffer.Count == 0)
+            {
+                reason = $"no hay ningun cofre accesible a menos de {PluginConfig.AnimalFeedRange.Value:F0} m";
+            }
+            else if (owned == 0)
+            {
+                reason = $"hay {Buffer.Count} cofre(s) cerca pero ninguno es tuyo " +
+                         "(en el servidor la propiedad del ZDO puede estar en otro jugador)";
+            }
+            else if (withFood == 0)
+            {
+                reason = $"hay {owned} cofre(s) tuyo(s) cerca, pero ninguno tiene comida que este animal acepte";
+            }
+            else
+            {
+                reason = "se encontro comida pero no se pudo sacar del cofre";
+            }
+
+            Plugin.Log.LogInfo($"[animal] {Name(ai)} tiene hambre y no comio: {reason}.");
+            LogMenuOnce(ai);
+        }
+
+        /// <summary>
+        /// Vuelca una sola vez por especie la lista real de comida (m_consumeItems). Vive en los
+        /// prefabs del juego, no en el codigo, asi que es la unica forma de saber que acepta.
+        /// </summary>
+        private static void LogMenuOnce(MonsterAI ai)
+        {
+            string name = Name(ai);
+            if (!LoggedMenus.Add(name))
+            {
+                return;
+            }
+
+            MenuBuilder.Length = 0;
+            if (ai.m_consumeItems != null)
+            {
+                foreach (ItemDrop consumable in ai.m_consumeItems)
+                {
+                    if (consumable == null)
+                    {
+                        continue;
+                    }
+
+                    if (MenuBuilder.Length > 0)
+                    {
+                        MenuBuilder.Append(", ");
+                    }
+
+                    MenuBuilder.Append(MoveLog.Localize(consumable.m_itemData.m_shared.m_name));
+                }
+            }
+
+            Plugin.Log.LogInfo(
+                $"[animal] {name} come: {(MenuBuilder.Length > 0 ? MenuBuilder.ToString() : "(nada, lista vacia)")}");
+            MenuBuilder.Length = 0;
+        }
+
+        private static string Name(MonsterAI ai)
+        {
+            Character character = ai.m_character;
+            return character != null ? MoveLog.Localize(character.m_name) : ai.name;
+        }
+
+        private static float Distance(MonsterAI ai, Container container)
+        {
+            return Vector3.Distance(ai.transform.position, container.transform.position);
+        }
+
+        public static void Reset()
+        {
+            Buffer.Clear();
+            ItemBuffer.Clear();
+            LoggedMenus.Clear();
+        }
     }
 
     /// <summary>
@@ -167,14 +288,14 @@ namespace QuickStash.Features
     {
         private static void Postfix(MonsterAI __instance, ref ItemDrop __result)
         {
-            if (__result != null || !AnimalFeeder.Active(__instance))
+            if (__result != null)
             {
                 return;
             }
 
             try
             {
-                __result = AnimalFeeder.TakeFromContainer(__instance);
+                __result = AnimalFeeder.TryFeed(__instance);
             }
             catch (Exception e)
             {

@@ -61,3 +61,8 @@ Correcciones de la auditoria previa al reparto. Nada de esto se probo in-game to
 - La comida se tira al lado del animal, no del cofre, asi que el cofre puede estar fuera del cerco.
 - Solo actua el cliente dueno del animal y solo usa cofres propios, igual que los hornos.
 
+## 1.2.1 (experimental)
+- Diagnostico para los animales: con LogDeRendimiento activo, el log explica por que un animal
+  hambriento no comio (no hay cofre, el cofre es de otro jugador, o la comida no le gusta) y
+  vuelca una vez por especie la lista real de lo que come.
+
