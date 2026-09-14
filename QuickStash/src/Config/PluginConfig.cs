@@ -138,7 +138,7 @@ namespace QuickStash.Config
 
             FeedStations = cfg.Bind(Hornos, "Activado", true,
                 "Carga sola la fundicion, el horno de carbon, el alto horno, el molino, la rueca y la refineria de eitr con lo que haya en un cofre al lado.");
-            FeedRange = cfg.Bind(Hornos, "Rango", 10f,
+            FeedRange = cfg.Bind(Hornos, "Rango", 15f,
                 new ConfigDescription("Distancia en metros entre el horno y el cofre. Se mide desde el horno, no desde el jugador.",
                     new AcceptableValueRange<float>(1f, 30f)));
             FeedIntervalSeconds = cfg.Bind(Hornos, "IntervaloSegundos", 2f,

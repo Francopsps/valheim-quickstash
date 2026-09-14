@@ -58,13 +58,13 @@ Con el martillo en la mano, las piezas cuentan también el material de los cofre
 
 ### Hornos automáticos
 
-Poné un cofre a menos de 10 m de una **fundición, horno de carbón, alto horno, molino, rueca o
+Poné un cofre a menos de 15 m de una **fundición, horno de carbón, alto horno, molino, rueca o
 refinería de eitr** y se carga solo con lo que corresponda: carbón y mineral para la fundición,
 madera para el horno de carbón, y así.
 
 **Cuidado con el horno de carbón.** Acepta *varios* tipos de madera y todos le dan carbón por
 igual, así que un cofre con madera fina a 10 m se te puede convertir solo. Es irreversible. Si
-guardás madera valiosa cerca de un horno de carbón, ponela en `ItemsExcluidos` (por ejemplo
+guardás madera valiosa a menos de 15 m de un horno de carbón, ponela en `ItemsExcluidos` (por ejemplo
 `FineWood,RoundLog,ElderBark`) o alejá el cofre.
 
 Otras dos cosas que conviene saber:
@@ -130,7 +130,7 @@ Lo que probablemente quieras tocar:
 | `ItemsExcluidos` | vacío | Prefabs que nunca se guardan **ni se cargan a un horno**, separados por coma |
 | `Crafteo > Rango` | 30 | Metros para buscar material al craftear |
 | `Construccion > Rango` | 30 | Metros para buscar material al construir |
-| `Hornos > Rango` | 10 | Metros entre el horno y el cofre |
+| `Hornos > Rango` | 15 | Metros entre el horno y el cofre |
 | `Hornos > IntervaloSegundos` | 2 | Cada cuánto revisa cada horno |
 | `Hornos > MaxPorCiclo` | 5 | Cuántas unidades carga por horno en cada revisión |
 | `Hornos > MaxHornosPorSegundo` | 6 | Tope global: cuántos hornos distintos atiende por segundo |

@@ -96,3 +96,6 @@ Correcciones de la auditoria de seguridad sobre master.
 - Los ciclos de animales corren aislados: una excepcion ahi ya no mata el atajo de guardado.
 - El diagnostico deja de repetir "no hay animales" cada 5 segundos.
 
+## 1.3.2
+- El rango de los hornos pasa de 10 a 15 metros.
+
