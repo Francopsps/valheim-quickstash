@@ -123,7 +123,7 @@ Lo que probablemente quieras tocar:
 
 | Opción | Por defecto | Para qué |
 |---|---|---|
-| `Rango` | 30 | Metros a la redonda para buscar cofres al guardar |
+| `Rango` | 15 | Metros a la redonda para buscar cofres al guardar |
 | `Atajo` | `N` | Tecla para guardar sin abrir el inventario |
 | `ProtegerBarraRapida` | true | No guarda la primera fila del inventario |
 | `PosicionX` / `PosicionY` | 0 | Mover el botón si te queda mal ubicado o chocado con otro mod de UI |

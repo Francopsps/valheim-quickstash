@@ -87,7 +87,7 @@ namespace QuickStash.Config
             LogMoves = cfg.Bind(General, "LogDeMovimientos", true,
                 "Anota en BepInEx/LogOutput.log cada item que el mod mueve, con cantidad, cofre, posicion y hora. Dejalo activado: es el unico rastro para investigar si alguna vez falta algo.");
 
-            Range = cfg.Bind(Stash, "Rango", 30f,
+            Range = cfg.Bind(Stash, "Rango", 15f,
                 new ConfigDescription("Distancia en metros para buscar cofres al guardar.",
                     new AcceptableValueRange<float>(2f, 50f)));
             Hotkey = cfg.Bind(Stash, "Atajo", new KeyboardShortcut(KeyCode.N),

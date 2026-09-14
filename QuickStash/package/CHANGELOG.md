@@ -99,3 +99,6 @@ Correcciones de la auditoria de seguridad sobre master.
 ## 1.3.2
 - El rango de los hornos pasa de 10 a 15 metros.
 
+## 1.3.3
+- El rango del guardado rapido baja de 30 a 15 metros.
+

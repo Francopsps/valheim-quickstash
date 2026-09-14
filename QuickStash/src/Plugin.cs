@@ -16,7 +16,7 @@ namespace QuickStash
     {
         public const string PluginGuid = "com.valheimcrew.quickstash";
         public const string PluginName = "QuickStash";
-        public const string PluginVersion = "1.3.2";
+        public const string PluginVersion = "1.3.3";
 
         internal static ManualLogSource Log;
 
