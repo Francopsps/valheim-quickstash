@@ -62,6 +62,8 @@ namespace QuickStash.Config
 
         public static ConfigEntry<bool> FeedAnimals;
         public static ConfigEntry<float> AnimalFeedRange;
+        public static ConfigEntry<float> AnimalIntervalSeconds;
+        public static ConfigEntry<int> AnimalMaxPerCycle;
         public static ConfigEntry<bool> AnimalLog;
 
         public static ConfigEntry<int> CacheMs;
@@ -155,6 +157,12 @@ namespace QuickStash.Config
             AnimalFeedRange = cfg.Bind(Animales, "Rango", 10f,
                 new ConfigDescription("Distancia en metros entre el animal y el cofre. Se mide desde el animal. La comida se tira al lado del animal, asi que el cofre puede estar del otro lado del cerco.",
                     new AcceptableValueRange<float>(1f, 30f)));
+            AnimalIntervalSeconds = cfg.Bind(Animales, "IntervaloSegundos", 5f,
+                new ConfigDescription("Cada cuanto se revisan los animales cercanos. Subirlo baja el uso de CPU.",
+                    new AcceptableValueRange<float>(1f, 30f)));
+            AnimalMaxPerCycle = cfg.Bind(Animales, "MaxPorCiclo", 3,
+                new ConfigDescription("A cuantos animales se les deja comida como mucho en cada revision.",
+                    new AcceptableValueRange<int>(1, 10)));
             AnimalLog = cfg.Bind(Animales, "LogDeComida", false,
                 "Anota tambien en el log cada vez que un animal saca comida de un cofre. Apagado por defecto para no tapar el resto del registro.");
 

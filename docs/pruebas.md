@@ -255,30 +255,33 @@ que decir `con coincidencia 20 | pedidos 4 (tope 4)`.
 
 ## N. Animales que comen del cofre (rama experimental)
 
-**N1 — base.** Un par de jabalíes domesticados y hambrientos, sin comida en el piso, y un cofre
-con zanahorias/nabos a menos de 10 m. Esperar hasta 10 segundos (el juego busca comida en ese
-intervalo).
-- **Correcto:** aparece una unidad de comida al lado del animal y se la come.
-- Contar el cofre antes y después: tiene que bajar exactamente lo que se comieron.
+El primer intento fallo en el servidor porque el codigo colgaba de la IA del animal, que solo
+corre en el cliente dueno de su ZDO. Estas pruebas van **en el servidor**, no en solitario: en
+solitario sos dueno de todo y el bug original no se reproduce.
 
-**N2 — solo lo que comen.** Poner en el mismo cofre comida que ese animal **no** come (por
-ejemplo carne cruda en un cofre de jabalíes). No la tiene que tocar.
+**N1 — el caso que fallaba.** Corral con jabalies hambrientos y un cofre TUYO con zanahorias a
+menos de 10 m. Con `LogDeRendimiento = true`, mirar el log.
+- **Correcto:** comen, aunque el barrido siga diciendo `dueno del ZDO: NO`. Esa combinacion es
+  justamente la prueba de que el rediseno funciona.
+- Contar el cofre antes y despues: tiene que bajar exactamente lo que comieron.
 
-**N3 — no se acumula comida en el piso.** Dejar un animal hambriento al lado del cofre y mirar
-un rato. Nunca puede haber más de una unidad tirada: el mod solo actúa cuando no hay comida cerca.
+**N2 — solo lo que comen.** Carne cruda en el mismo cofre: no la tocan.
 
-**N4 — cofre fuera del cerco.** Cofre del otro lado de la cerca, a menos de 10 m. Tiene que
-funcionar igual (la comida cae al lado del animal, no del cofre).
+**N3 — no se acumula comida.** Mirar el piso un rato: nunca mas de una unidad tirada por animal.
 
-**N5 — rango.** Mover el cofre a 15 m: dejan de comer.
+**N4 — cofre fuera del cerco.** A menos de 10 m pero del otro lado de la cerca: funciona igual.
 
-**N6 — cofre ajeno.** En el servidor, con el cofre bajo la propiedad de otro jugador: no lo toca.
-Es la misma decisión que en los hornos.
+**N5 — rango.** Cofre a 15 m: dejan de comer.
 
-**N7 — cuentas cerradas.** Cofre con exactamente 50 zanahorias, 4 jabalíes hambrientos. Dejarlo
-30 minutos. Zanahorias que faltan = veces que comieron. Revisar el log por cualquier
-`Fallo al dar de comer desde el cofre:`.
+**N6 — dos jugadores con el mod.** Los dos parados en el corral. Contar el cofre: si baja el
+doble de lo que comieron, la eleccion por cercania no esta actuando.
 
-**N8 — cría.** Confirmar que con comida disponible se reproducen normalmente. Es el
-comportamiento esperado, pero conviene saber a qué ritmo antes de dejarlo en el servidor.
+**N7 — un jugador sin el mod.** Que el dueno del corral NO tenga QuickStash y vos si. Los animales
+tienen que comer igual. Es la propiedad nueva del rediseno.
+
+**N8 — cuentas cerradas.** Cofre con exactamente 50 zanahorias. Dejarlo 30 minutos. Zanahorias
+que faltan = veces que comieron. Revisar el log por `Fallo al dar de comer desde el cofre:`.
+
+**N9 — cria.** Con comida disponible se reproducen normalmente. Es lo esperado, pero conviene
+medir a que ritmo antes de dejarlo fijo en el servidor.
 

@@ -193,3 +193,25 @@ encontro nada en el suelo, se saca una unidad del cofre y se tira al piso, y el 
 vanilla (caminar, comer, resetear hambre, progreso de cria) sigue igual. Es autolimitante: como
 el postfix solo corre si no hay comida cerca, nunca puede acumular comida tirada.
 
+### Trampa: que corre y que no en un cliente que no es dueno del ZDO
+
+`BaseAI.UpdateAI` arranca con `if (!m_nview.IsOwner()) return false;`, asi que **toda la rama de
+IA** (incluido `UpdateConsumeItem` y `FindClosestConsumableItem`) solo corre en el cliente dueno.
+Y la propiedad es pegajosa: `ZDOMan.ReleaseNearbyZDOS` reasigna solo si el dueno actual salio de
+su area activa, de modo que el jugador parado al lado de un animal **normalmente no es su dueno**.
+
+Parchear cualquier cosa colgada de `UpdateAI` para que actue desde otro cliente no funciona, y
+ademas falla en silencio absoluto: no hay excepcion ni log, el metodo simplemente no se llama.
+
+Lo que SI se puede leer desde un cliente cualquiera:
+
+| Dato | Fuente | Sirve sin ser dueno |
+|---|---|---|
+| `Tameable.IsHungry()` / `IsTamed()` | ZDO (`s_tameLastFeeding`) | Si, los ZDO estan replicados |
+| `MonsterAI.m_consumeItems`, `m_consumeSearchRange` | prefab | Si, es dato local del componente |
+| `BaseAI.m_instances` | `private static List<BaseAI>` | Si, lo llena `Awake` en todos los clientes |
+| `Player.GetAllPlayers()` | `public static` | Si |
+
+El patron que funciona es no pelear por la propiedad: dejar el efecto en el mundo (un ItemDrop en
+el suelo) y que el cliente dueno lo consuma con su propio codigo vanilla.
+

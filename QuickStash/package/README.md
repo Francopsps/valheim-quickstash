@@ -87,6 +87,9 @@ hambre y no hay comida en el piso, sacan una unidad del cofre y se la comen.
   del cerco sin problema.
 - Todo lo demás lo hace el juego: la animación, el hambre, y el progreso de domesticación o de
   cría. Para el juego es exactamente como si se la hubieras tirado vos.
+- **Con que uno solo de ustedes tenga el mod, alcanza.** El mod deja la comida en el piso y
+  después come el animal por su cuenta, con código del juego base: los animales se alimentan
+  aunque el dueño del corral no tenga QuickStash instalado.
 - **Ojo con la cría**: si les dejás comida infinita al lado, se van a reproducir sin parar. Si no
   querés eso, sacá el cofre o usá `Animales > Activado = false`.
 
@@ -130,6 +133,8 @@ Lo que probablemente quieras tocar:
 | `Hornos > LogDeCarga` | false | Anotar también las cargas automáticas en el log |
 | `Animales > Activado` | true | Los domesticados comen del cofre cercano |
 | `Animales > Rango` | 10 | Metros entre el animal y el cofre |
+| `Animales > IntervaloSegundos` | 5 | Cada cuánto se revisan los animales cercanos |
+| `Animales > MaxPorCiclo` | 3 | A cuántos animales se les deja comida por revisión |
 | `Animales > LogDeComida` | false | Anotar en el log cada vez que un animal saca comida |
 | `MaxCofresPorAccion` | 32 | Tope de cofres por pulsación |
 | `LogDeMovimientos` | **true** | Anota en el log cada objeto que se mueve, con cofre, posición y hora |

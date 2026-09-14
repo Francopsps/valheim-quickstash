@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using HarmonyLib;
 using QuickStash.Config;
 using QuickStash.Core;
 using UnityEngine;
@@ -11,66 +10,197 @@ namespace QuickStash.Features
     /// <summary>
     /// Los animales domesticados comen de un cofre cercano cuando no encuentran comida en el suelo.
     ///
-    /// Como funciona el hambre en el vanilla (MonsterAI):
+    /// NO hace falta ser dueno del ZDO del animal, y ese es el punto de todo el diseno.
     ///
-    ///     UpdateConsumeItem()  -> cada m_consumeSearchInterval (10 s), si m_tamable.IsHungry()
-    ///                             llama a FindClosestConsumableItem(m_consumeSearchRange)
-    ///     FindClosestConsumableItem() -> Physics.OverlapSphere sobre la capa "item": solo ve
-    ///                                    objetos tirados en el SUELO
-    ///     CanConsume(item)     -> compara contra m_consumeItems, la lista de comida propia de
-    ///                             cada bicho
+    /// El primer intento colgaba de un postfix de MonsterAI.FindClosestConsumableItem, y nunca
+    /// se ejecutaba: ese metodo cuelga de UpdateConsumeItem &lt;- UpdateAI, y BaseAI.UpdateAI
+    /// arranca con `if (!m_nview.IsOwner()) return false;`. En un servidor con varios jugadores
+    /// la propiedad de los ZDO es pegajosa (ZDOMan.ReleaseNearbyZDOS solo reasigna si el dueno
+    /// actual salio de su area activa), asi que el jugador parado al lado del corral tipicamente
+    /// NO es el dueno de sus animales.
     ///
-    /// El mod se engancha en el momento exacto en que el animal tiene hambre y no encontro nada:
-    /// saca UNA unidad de comida del cofre y la tira al piso al lado del animal, y despues deja
-    /// que el juego haga todo lo demas (caminar, la animacion de comer, resetear el hambre, el
-    /// progreso de domesticacion). Por eso la regla de "solo lo que pueden comer normalmente"
-    /// sale gratis: el filtro es el CanConsume del propio juego, no una lista nuestra.
+    /// Lo unico que hay que hacer es poner la comida en el suelo. De ahi en adelante, el cliente
+    /// que si es dueno corre su FindClosestConsumableItem vanilla, ve el objeto tirado —que es un
+    /// objeto del mundo, visible para todos— y se lo come, sin ningun parche de por medio. Como
+    /// consecuencia, la funcion anda incluso si ese jugador no tiene el mod instalado.
     ///
-    /// Se tira al lado del ANIMAL y no del cofre a proposito: el cofre suele estar del otro lado
-    /// del cerco, y si la comida cayera ahi el animal no tendria camino hasta ella.
+    /// Todo lo necesario para decidir se puede leer sin ser dueno:
+    /// - Tameable.IsHungry() sale de ZDOVars.s_tameLastFeeding, y los ZDO estan replicados.
+    /// - MonsterAI.m_consumeItems es dato del prefab, no del ZDO.
     ///
-    /// Seguridad con 14 jugadores, igual que en los hornos:
-    /// - BaseAI.UpdateAI sale temprano si !m_nview.IsOwner(), asi que toda esta rama corre solo
-    ///   en el cliente dueno del animal: exactamente uno, sin coordinar nada.
-    /// - Solo se usan cofres que ya son nuestros; no se le arrebata la propiedad a nadie.
-    ///
-    /// Diagnostico: con LogDeRendimiento activo se explica en el log POR QUE no se alimento, y
-    /// se lista una vez el menu real de cada especie. Esa lista vive en los prefabs del juego,
-    /// no en el codigo, asi que es la unica forma de saber que come cada bicho.
+    /// Coordinacion entre clientes, en dos capas:
+    /// - Solo actua el jugador mas cercano al animal.
+    /// - Antes de tirar se comprueba que no haya ya comida en el piso, igual que hace el juego.
+    ///   Eso vuelve la funcion autolimitante y hace inofensivo un doble tiro si dos clientes se
+    ///   pisan en el margen: la segunda unidad simplemente se come despues.
     /// </summary>
     internal static class AnimalFeeder
     {
+        /// <summary>Radio alrededor del jugador donde se buscan animales. Mas alla no estan ni cargados.</summary>
+        private const float ScanRange = 40f;
+
         private static readonly List<Container> Buffer = new List<Container>(16);
         private static readonly List<ItemDrop.ItemData> ItemBuffer = new List<ItemDrop.ItemData>(32);
+        private static readonly Collider[] ItemHits = new Collider[32];
         private static readonly HashSet<string> LoggedMenus = new HashSet<string>(StringComparer.Ordinal);
         private static readonly StringBuilder MenuBuilder = new StringBuilder(128);
 
-        /// <summary>
-        /// Devuelve la comida ya tirada en el piso para que el animal la coma, o null si no hay
-        /// nada utilizable cerca.
-        /// </summary>
-        public static ItemDrop TryFeed(MonsterAI ai)
+        private static float _nextRun;
+        private static int _itemMask;
+
+        public static void Tick()
         {
-            if (!PluginConfig.Enabled.Value || !PluginConfig.FeedAnimals.Value || ai == null)
+            if (!PluginConfig.Enabled.Value || !PluginConfig.FeedAnimals.Value)
             {
-                return null;
+                return;
             }
 
-            Tameable tameable = ai.m_tamable;
-            if (tameable == null || !tameable.IsTamed())
+            Player player = Player.m_localPlayer;
+            if (player == null)
             {
-                return null;
+                return;
             }
 
-            if (!tameable.IsHungry())
+            float now = Time.realtimeSinceStartup;
+            if (now < _nextRun)
             {
-                return null;
+                return;
             }
 
+            _nextRun = now + PluginConfig.AnimalIntervalSeconds.Value;
+
+            List<BaseAI> instances = BaseAI.m_instances;
+            if (instances == null)
+            {
+                return;
+            }
+
+            Vector3 origin = player.transform.position;
+            float sqrScan = ScanRange * ScanRange;
             long playerId = ContainerAccess.LocalPlayerId();
+            int budget = PluginConfig.AnimalMaxPerCycle.Value;
 
+            for (int i = 0; i < instances.Count && budget > 0; i++)
+            {
+                MonsterAI ai = instances[i] as MonsterAI;
+                if (ai == null)
+                {
+                    continue;
+                }
+
+                // Descartes baratos primero: tipo, distancia y estado. Recien despues los caros
+                // (eleccion por cercania, barrido de fisica y consulta de cofres).
+                Tameable tameable = ai.m_tamable;
+                if (tameable == null || !tameable.IsTamed())
+                {
+                    continue;
+                }
+
+                Vector3 animalPosition = ai.transform.position;
+                if ((animalPosition - origin).sqrMagnitude > sqrScan)
+                {
+                    continue;
+                }
+
+                if (!tameable.IsHungry())
+                {
+                    continue;
+                }
+
+                if (ai.m_consumeItems == null || ai.m_consumeItems.Count == 0)
+                {
+                    continue;
+                }
+
+                if (!IsClosestPlayer(player, animalPosition))
+                {
+                    continue;
+                }
+
+                if (HasFoodOnGround(ai))
+                {
+                    continue;
+                }
+
+                if (Feed(ai, animalPosition, playerId))
+                {
+                    budget--;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Evita que los 14 clientes le tiren comida al mismo bicho. Es una eleccion aproximada
+        /// —dos clientes pueden discrepar en el margen— y por eso no es la unica defensa: la
+        /// comprobacion de comida en el piso cubre el resto.
+        /// </summary>
+        private static bool IsClosestPlayer(Player local, Vector3 animalPosition)
+        {
+            List<Player> players = Player.GetAllPlayers();
+            if (players == null || players.Count <= 1)
+            {
+                return true;
+            }
+
+            float localDistance = (local.transform.position - animalPosition).sqrMagnitude;
+
+            foreach (Player other in players)
+            {
+                if (other == null || other == local)
+                {
+                    continue;
+                }
+
+                if ((other.transform.position - animalPosition).sqrMagnitude < localDistance)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Misma comprobacion que hace MonsterAI.FindClosestConsumableItem, sin el HavePath: ese
+        /// haria pathfinding sobre una criatura que este cliente no simula.
+        /// </summary>
+        private static bool HasFoodOnGround(MonsterAI ai)
+        {
+            if (_itemMask == 0)
+            {
+                _itemMask = LayerMask.GetMask("item");
+            }
+
+            int count = Physics.OverlapSphereNonAlloc(
+                ai.transform.position, ai.m_consumeSearchRange, ItemHits, _itemMask);
+
+            for (int i = 0; i < count; i++)
+            {
+                Collider hit = ItemHits[i];
+                if (hit == null || hit.attachedRigidbody == null)
+                {
+                    continue;
+                }
+
+                ItemDrop drop = hit.attachedRigidbody.GetComponent<ItemDrop>();
+                if (drop == null || drop.m_itemData?.m_shared == null)
+                {
+                    continue;
+                }
+
+                if (ai.CanConsume(drop.m_itemData))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool Feed(MonsterAI ai, Vector3 animalPosition, long playerId)
+        {
             ContainerRegistry.Query(
-                ai.transform.position,
+                animalPosition,
                 PluginConfig.AnimalFeedRange.Value,
                 PluginConfig.MaxScanned.Value,
                 playerId,
@@ -104,22 +234,21 @@ namespace QuickStash.Features
 
                 withFood++;
 
-                ItemDrop dropped = DropOne(ai, container, source, food);
-                if (dropped != null)
+                if (DropOne(ai, container, source, food, animalPosition))
                 {
                     if (PluginConfig.DebugTiming.Value)
                     {
                         Plugin.Log.LogInfo(
-                            $"[animal] {Name(ai)}: saco {MoveLog.Localize(food.m_shared.m_name)} " +
-                            $"de un cofre a {Distance(ai, container):F1} m");
+                            $"[animal] {Name(ai)}: se le dejo {MoveLog.Localize(food.m_shared.m_name)} " +
+                            $"de un cofre a {Vector3.Distance(animalPosition, container.transform.position):F1} m");
                     }
 
-                    return dropped;
+                    return true;
                 }
             }
 
             Explain(ai, owned, withFood);
-            return null;
+            return false;
         }
 
         private static ItemDrop.ItemData FindFood(MonsterAI ai, Inventory source)
@@ -163,29 +292,30 @@ namespace QuickStash.Features
         /// fallo al instanciar dejaria el objeto en el cofre y tambien en el suelo. Asi el peor
         /// caso es perder una unidad de comida, que es preferible a duplicarla.
         /// </summary>
-        private static ItemDrop DropOne(MonsterAI ai, Container container, Inventory source, ItemDrop.ItemData item)
+        private static bool DropOne(MonsterAI ai, Container container, Inventory source, ItemDrop.ItemData item, Vector3 animalPosition)
         {
             ItemDrop.ItemData single = item.Clone();
             single.m_stack = 1;
 
             if (!source.RemoveItem(item, 1))
             {
-                return null;
+                return false;
             }
 
             // RemoveItem ya dispara Changed() adentro, que en un cofre propio termina en Save().
 
+            // Al lado del ANIMAL y no del cofre: el cofre suele estar del otro lado del cerco, y
+            // ahi el animal no tendria camino hasta la comida.
             Vector3 offset = UnityEngine.Random.insideUnitSphere * 0.3f;
-            Vector3 position = ai.transform.position + new Vector3(offset.x, 0.4f, offset.z);
+            Vector3 position = animalPosition + new Vector3(offset.x, 0.4f, offset.z);
 
-            ItemDrop dropped = ItemDrop.DropItem(single, 1, position, Quaternion.identity);
-            if (dropped == null)
+            if (ItemDrop.DropItem(single, 1, position, Quaternion.identity) == null)
             {
-                return null;
+                return false;
             }
 
             MoveLog.RecordAnimalFeed(container, item.m_shared.m_name, 1);
-            return dropped;
+            return true;
         }
 
         /// <summary>
@@ -203,7 +333,7 @@ namespace QuickStash.Features
             string reason;
             if (Buffer.Count == 0)
             {
-                reason = $"no hay ningun cofre accesible a menos de {PluginConfig.AnimalFeedRange.Value:F0} m";
+                reason = $"no hay ningun cofre accesible a menos de {PluginConfig.AnimalFeedRange.Value:F0} m del animal";
             }
             else if (owned == 0)
             {
@@ -236,26 +366,22 @@ namespace QuickStash.Features
             }
 
             MenuBuilder.Length = 0;
-            if (ai.m_consumeItems != null)
+            foreach (ItemDrop consumable in ai.m_consumeItems)
             {
-                foreach (ItemDrop consumable in ai.m_consumeItems)
+                if (consumable == null)
                 {
-                    if (consumable == null)
-                    {
-                        continue;
-                    }
-
-                    if (MenuBuilder.Length > 0)
-                    {
-                        MenuBuilder.Append(", ");
-                    }
-
-                    MenuBuilder.Append(MoveLog.Localize(consumable.m_itemData.m_shared.m_name));
+                    continue;
                 }
+
+                if (MenuBuilder.Length > 0)
+                {
+                    MenuBuilder.Append(", ");
+                }
+
+                MenuBuilder.Append(MoveLog.Localize(consumable.m_itemData.m_shared.m_name));
             }
 
-            Plugin.Log.LogInfo(
-                $"[animal] {name} come: {(MenuBuilder.Length > 0 ? MenuBuilder.ToString() : "(nada, lista vacia)")}");
+            Plugin.Log.LogInfo($"[animal] {name} come: {MenuBuilder}");
             MenuBuilder.Length = 0;
         }
 
@@ -265,42 +391,12 @@ namespace QuickStash.Features
             return character != null ? MoveLog.Localize(character.m_name) : ai.name;
         }
 
-        private static float Distance(MonsterAI ai, Container container)
-        {
-            return Vector3.Distance(ai.transform.position, container.transform.position);
-        }
-
         public static void Reset()
         {
             Buffer.Clear();
             ItemBuffer.Clear();
             LoggedMenus.Clear();
-        }
-    }
-
-    /// <summary>
-    /// Solo se engancha cuando el vanilla ya busco y no encontro comida en el suelo. Eso pasa
-    /// como mucho una vez cada m_consumeSearchInterval (10 s por defecto) y unicamente si el
-    /// animal tiene hambre, asi que no hace falta ningun temporizador propio.
-    /// </summary>
-    [HarmonyPatch(typeof(MonsterAI), "FindClosestConsumableItem")]
-    internal static class MonsterAI_FindClosestConsumableItem_Patch
-    {
-        private static void Postfix(MonsterAI __instance, ref ItemDrop __result)
-        {
-            if (__result != null)
-            {
-                return;
-            }
-
-            try
-            {
-                __result = AnimalFeeder.TryFeed(__instance);
-            }
-            catch (Exception e)
-            {
-                Plugin.Log.LogError($"Fallo al dar de comer desde el cofre: {e}");
-            }
+            _nextRun = 0f;
         }
     }
 }
