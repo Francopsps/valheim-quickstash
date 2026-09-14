@@ -1,2 +1,0 @@
-- [Hechos verificados de la API de Valheim](reference_valheim-api-facts.md) — decompilados de assembly_valheim 1.0.7; evitan re-decompilar y cortan falsos positivos recurrentes.
-- [Estado e historial de QuickStash](project_quickstash.md) — mod cliente para 14 jugadores, filosofia KISS, que se reviso en cada version.

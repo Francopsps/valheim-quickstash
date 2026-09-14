@@ -1,4 +1,0 @@
-- [Como decompilar el assembly del juego](reference_valheim-decompile.md) — ilspycmd, publicizer, y que NO cubre docs/api-1.0.7.md.
-- [Invariantes del vanilla ya verificados](verified_vanilla-invariants.md) — RPC sincronico a ZDO propio, AddItem/RemoveItem parciales, TryPlacePiece no revalida, topes del Smelter.
-- [Como correr auditorias acá](feedback_audit-workflow.md) — no compilar sin permiso, decisiones de diseno ya ratificadas, el entregable es el mensaje final.
-- [Falsos positivos ya refutados](feedback_confirmed-non-findings.md) — sobrecarga de hornos, trafico de los RPC, delta de AddItem, null de Unity.
