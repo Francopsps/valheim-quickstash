@@ -2,3 +2,4 @@
 - [Invariantes de QuickStash ya verificados](quickstash-verified-invariants.md) — spot-check en vez de re-auditar desde cero.
 - [Gotchas del vanilla de Valheim 1.0.7](valheim-vanilla-gotchas.md) — comportamientos confirmados decompilando (DropItem, TimedDestruction, RemoveItem, MonsterAI).
 - [Workflow de decompilado y build](valheim-decompile-workflow.md) — comandos exactos, y por que el mod ve miembros privados (Publicizer).
+- [Modelo de amenaza de CrewRow](crewrow-threat-model.md) — mod de remar: no toca items ni disco; el riesgo esta en el RPC propio y en RowBoost.

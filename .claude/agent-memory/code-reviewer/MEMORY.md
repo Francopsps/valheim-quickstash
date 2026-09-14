@@ -1,0 +1,3 @@
+- [Proyecto: mods de Valheim](proyecto-mods-valheim.md) — el repo aloja varios mods hermanos (QuickStash maduro, CrewRow nuevo); confirmar de cual es el scope.
+- [Convenciones verificadas del repo](convenciones-verificadas-repo.md) — sin `var`, sin acentos en codigo, PatchGroup, catch sin throttle en Update: patron, no hallazgo.
+- [API de Valheim: barcos y RPC](api-valheim-barcos-verificada.md) — hechos decompilados de Ship/ZNetView/Player 1.0 ya confirmados, para no repetir el trabajo.
