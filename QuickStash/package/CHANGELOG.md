@@ -37,3 +37,20 @@ Correcciones de la auditoria previa al reparto. Nada de esto se probo in-game to
 
 ## 1.0.3
 - El rango de crafteo desde cofres tambien pasa a 30 metros, igual que el de guardado.
+
+## 1.1.0
+- **Arreglado: cofres que a veces no se tomaban.** No era la distancia. Se recortaba a los 32
+  cofres mas cercanos ANTES de mirar cuales tenian el objeto, asi que con muchos cofres juntos
+  los que quedaban fuera de ese tope no se usaban nunca. Ahora se filtra primero y el tope se
+  aplica solo a los cofres a los que se les escribe. Leer un cofre no cuesta red.
+- **Nuevo: construir desde cofres.** Con el martillo, las piezas usan el material de los cofres
+  cercanos (30 m por defecto). El material se trae recien al colocar la pieza.
+- **Nuevo: hornos automaticos.** Un cofre a menos de 10 m de una fundicion, horno de carbon,
+  alto horno, molino, rueca o refineria de eitr la carga sola con combustible y mineral.
+  Solo usa cofres que ya son tuyos, y solo actua el jugador mas cercano al horno.
+- Con LogDeRendimiento activo, el resumen del guardado ahora dice cuantos cofres habia en rango,
+  cuantos eran utilizables y cuantos tenian el objeto: si algo no se guarda, el log lo explica.
+- Opcion nueva MaxCofresEscaneados (128) para el tope de lectura, separado de MaxCofresPorAccion
+  (32) que sigue siendo el de escritura.
+- Los hornos respetan ItemsExcluidos, tienen tope global por segundo, y sus cargas no llenan el
+  log salvo que actives Hornos > LogDeCarga.

@@ -23,6 +23,12 @@ namespace QuickStash.Core
 
         public static int Count => All.Count;
 
+        /// <summary>Cofres dentro del rango en la ultima consulta, antes de filtrar por permisos.</summary>
+        public static int LastInRange { get; private set; }
+
+        /// <summary>De esos, cuantos quedaron utilizables (acceso, ward, y nadie con el cofre abierto).</summary>
+        public static int LastUsable { get; private set; }
+
         private struct Entry
         {
             public Container Container;
@@ -54,10 +60,11 @@ namespace QuickStash.Core
         /// De paso elimina del registro las entradas ya destruidas (poda perezosa): asi no
         /// hace falta una pasada de limpieza aparte ni parchear el descargado de zonas.
         /// </summary>
-        public static void Query(Vector3 point, float range, int max, long playerId, List<Container> results)
+        public static void Query(Vector3 point, float range, int maxScanned, long playerId, List<Container> results)
         {
             results.Clear();
             SortBuffer.Clear();
+            LastInRange = 0;
 
             float sqrRange = range * range;
 
@@ -77,6 +84,8 @@ namespace QuickStash.Core
                     continue;
                 }
 
+                LastInRange++;
+
                 if (!ContainerAccess.CanUse(container, playerId))
                 {
                     continue;
@@ -85,9 +94,15 @@ namespace QuickStash.Core
                 SortBuffer.Add(new Entry { Container = container, SqrDistance = sqrDistance });
             }
 
+            LastUsable = SortBuffer.Count;
             SortBuffer.Sort(ByDistance);
 
-            int take = Mathf.Min(max, SortBuffer.Count);
+            // El tope de aca es solo de LECTURA, y por eso es alto: el inventario de un cofre
+            // ya esta replicado en local, leerlo no cuesta red. El tope bajo, el que protege al
+            // servidor, lo aplica cada feature sobre los cofres a los que de verdad le va a
+            // escribir, y recien despues de descartar los que no sirven. Recortar antes de ese
+            // filtro era el bug que hacia que con muchos cofres cerca algunos nunca se usaran.
+            int take = Mathf.Min(maxScanned, SortBuffer.Count);
             for (int i = 0; i < take; i++)
             {
                 results.Add(SortBuffer[i].Container);

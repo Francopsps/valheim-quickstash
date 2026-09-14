@@ -1,17 +1,21 @@
-﻿# QuickStash
+# QuickStash
 
-Mod de cliente para Valheim 1.0. Hace tres cosas:
+Mod de cliente para Valheim 1.0. Hace cinco cosas:
 
-1. **Un botÃ³n en el inventario** que manda de golpe a los cofres cercanos los objetos que
+1. **Un botón en el inventario** que manda de golpe a los cofres cercanos los objetos que
    esos cofres ya contienen.
-2. **Favoritos**: marcÃ¡s Ã­tems o casillas con `Alt+clic` y el botÃ³n nunca los guarda.
+2. **Favoritos**: marcás ítems o casillas con `Alt+clic` y el botón nunca los guarda.
 3. **Craftear desde cofres**: estando en la forja o en una mesa de crafteo, las recetas usan
    el material de los cofres de alrededor sin que lo tengas que sacar a mano.
+4. **Construir desde cofres**: con el martillo, las piezas usan el material de los cofres
+   cercanos.
+5. **Hornos automáticos**: un cofre al lado de una fundición o un horno de carbón lo carga solo
+   con combustible y mineral.
 
-EstÃ¡ pensado para un servidor con mucha gente: no agrega trÃ¡fico de red propio, no toca el
+Está pensado para un servidor con mucha gente: no agrega tráfico de red propio, no toca el
 servidor y nunca escribe en un cofre que otro jugador tenga abierto.
 
-## InstalaciÃ³n
+## Instalación
 
 Es **solo cliente**: lo instala cada jugador que lo quiera usar, y no hace falta ponerlo en
 el servidor. Se puede jugar con gente que no lo tenga.
@@ -21,94 +25,129 @@ el servidor. Se puede jugar con gente que no lo tenga.
 
 ## Uso
 
-### Guardar rÃ¡pido
+### Guardar rápido
 
-AbrÃ­ el inventario y apretÃ¡ el botÃ³n **Guardar** (arriba a la derecha del panel).
+Abrí el inventario y apretá el botón **Guardar** (arriba a la derecha del panel).
 
-- Solo manda cosas a los cofres que **ya tienen ese tipo de objeto**. Un cofre vacÃ­o no se
-  llena solo, igual que el botÃ³n de apilar del juego.
-- La primera fila del inventario (la barra rÃ¡pida) queda protegida por defecto.
+- Solo manda cosas a los cofres que **ya tienen ese tipo de objeto**. Un cofre vacío no se
+  llena solo, igual que el botón de apilar del juego.
+- La primera fila del inventario (la barra rápida) queda protegida por defecto.
 - Lo que tengas equipado nunca se guarda.
 - Si hay un cofre abierto, se usa primero.
-- TambiÃ©n se puede guardar con la tecla **`N`**, sin abrir el inventario. No se dispara
-  mientras estÃ¡s escribiendo en el chat, la consola o un cartel. Se cambia en `Atajo`.
+- También se puede guardar con la tecla **`N`**, sin abrir el inventario. No se dispara
+  mientras estás escribiendo en el chat, la consola o un cartel. Se cambia en `Atajo`.
 
 ### Favoritos
 
-- `Alt` + clic izquierdo **sobre un Ã­tem** â†’ protege ese **tipo de Ã­tem**. Toda tu madera
-  queda protegida, estÃ© en la casilla que estÃ©. Borde amarillo.
-- `Alt` + clic izquierdo **sobre una casilla vacÃ­a** â†’ protege esa **casilla**, que no se va a
+- `Alt` + clic izquierdo **sobre un ítem** → protege ese **tipo de ítem**. Toda tu madera
+  queda protegida, esté en la casilla que esté. Borde amarillo.
+- `Alt` + clic izquierdo **sobre una casilla vacía** → protege esa **casilla**, que no se va a
   usar para nada. Borde celeste.
-- `Alt` + `Shift` + clic sobre un Ã­tem â†’ protege la **casilla** en vez del tipo.
-- VolvÃ© a hacer el mismo clic para desmarcar.
+- `Alt` + `Shift` + clic sobre un ítem → protege la **casilla** en vez del tipo.
+- Volvé a hacer el mismo clic para desmarcar.
 
 Los favoritos se guardan por personaje, en
 `BepInEx\config\QuickStash\favorites.<personaje>.json`.
 
+### Construir desde cofres
+
+Con el martillo en la mano, las piezas cuentan también el material de los cofres cercanos
+(30 m por defecto). El material sale del cofre recién cuando colocás la pieza, no antes.
+
+### Hornos automáticos
+
+Poné un cofre a menos de 10 m de una **fundición, horno de carbón, alto horno, molino, rueca o
+refinería de eitr** y se carga solo con lo que corresponda: carbón y mineral para la fundición,
+madera para el horno de carbón, y así.
+
+**Cuidado con el horno de carbón.** Acepta *varios* tipos de madera y todos le dan carbón por
+igual, así que un cofre con madera fina a 10 m se te puede convertir solo. Es irreversible. Si
+guardás madera valiosa cerca de un horno de carbón, ponela en `ItemsExcluidos` (por ejemplo
+`FineWood,RoundLog,ElderBark`) o alejá el cofre.
+
+Otras dos cosas que conviene saber:
+
+- **Solo usa cofres que ya son tuyos.** En una base compartida, si otro jugador es dueño del
+  cofre (Valheim le asigna la propiedad al que llegó primero y sigue cerca), el horno no lo va a
+  tocar hasta que la propiedad pase a vos. Es a propósito: evita cualquier riesgo de duplicar
+  objetos en un ciclo que corre solo.
+- **Solo actúa el jugador más cercano al horno**, así que aunque los 14 tengan el mod, un horno
+  lo alimenta un solo cliente.
+
 ### Craftear desde cofres
 
-Parado en una estaciÃ³n (forja, mesa de trabajo, etc.), las recetas cuentan tambiÃ©n lo que hay
-en los cofres cercanos. El nÃºmero del requisito se pinta en celeste cuando alcanza gracias a
+Parado en una estación (forja, mesa de trabajo, etc.), las recetas cuentan también lo que hay
+en los cofres cercanos. El número del requisito se pinta en celeste cuando alcanza gracias a
 los cofres, y el material se trae solo al momento de craftear.
 
-Fuera de una estaciÃ³n el mod no interviene: craftear a mano y construir con el martillo
+Fuera de una estación el mod no interviene: craftear a mano y construir con el martillo
 funcionan exactamente como en el juego base.
 
-## ConfiguraciÃ³n
+## Configuración
 
-El archivo es `BepInEx\config\com.valheimcrew.quickstash.cfg`. Aparece reciÃ©n despuÃ©s de entrar
+El archivo es `BepInEx\config\com.valheimcrew.quickstash.cfg`. Aparece recién después de entrar
 al juego una vez con el mod instalado.
 
 Hay dos formas de tocarlo:
 
-- **A mano**, con un editor de texto, con el juego cerrado. BepInEx no vigila el archivo, asÃ­
+- **A mano**, con un editor de texto, con el juego cerrado. BepInEx no vigila el archivo, así
   que hay que **reiniciar el juego** para que tome los cambios.
-- **In-game con `F1`**, que es mÃ¡s cÃ³modo y aplica al instante. Para eso hace falta instalar
+- **In-game con `F1`**, que es más cómodo y aplica al instante. Para eso hace falta instalar
   aparte el mod [Official BepInEx ConfigurationManager](https://thunderstore.io/c/valheim/p/Azumatt/Official_BepInEx_ConfigurationManager/)
-  â€” **no viene incluido en BepInEx**. Es solo cliente: lo instala quien lo quiera.
+  — **no viene incluido en BepInEx**. Es solo cliente: lo instala quien lo quiera.
 
 Lo que probablemente quieras tocar:
 
-| OpciÃ³n | Por defecto | Para quÃ© |
+| Opción | Por defecto | Para qué |
 |---|---|---|
 | `Rango` | 30 | Metros a la redonda para buscar cofres al guardar |
 | `Atajo` | `N` | Tecla para guardar sin abrir el inventario |
 | `ProtegerBarraRapida` | true | No guarda la primera fila del inventario |
-| `PosicionX` / `PosicionY` | 0 | Mover el botÃ³n si te queda mal ubicado o chocado con otro mod de UI |
-| `ItemsExcluidos` | vacÃ­o | Prefabs que nunca se guardan, separados por coma |
+| `PosicionX` / `PosicionY` | 0 | Mover el botón si te queda mal ubicado o chocado con otro mod de UI |
+| `ItemsExcluidos` | vacío | Prefabs que nunca se guardan **ni se cargan a un horno**, separados por coma |
 | `Crafteo > Rango` | 30 | Metros para buscar material al craftear |
-| `MaxCofresPorAccion` | 32 | Tope de cofres por pulsaciÃ³n |
-| `LogDeMovimientos` | **true** | Anota en el log cada objeto que se mueve, con cofre, posiciÃ³n y hora |
-| `LogDeRendimiento` | false | Escribe en el log los ms y la cantidad de cofres de cada acciÃ³n |
+| `Construccion > Rango` | 30 | Metros para buscar material al construir |
+| `Hornos > Rango` | 10 | Metros entre el horno y el cofre |
+| `Hornos > IntervaloSegundos` | 2 | Cada cuánto revisa cada horno |
+| `Hornos > MaxPorCiclo` | 5 | Cuántas unidades carga por horno en cada revisión |
+| `Hornos > MaxHornosPorSegundo` | 6 | Tope global: cuántos hornos distintos atiende por segundo |
+| `Hornos > LogDeCarga` | false | Anotar también las cargas automáticas en el log |
+| `MaxCofresPorAccion` | 32 | Tope de cofres por pulsación |
+| `LogDeMovimientos` | **true** | Anota en el log cada objeto que se mueve, con cofre, posición y hora |
+| `LogDeRendimiento` | false | Escribe en el log los ms y la cantidad de cofres de cada acción |
 
 ## Multijugador
 
 - Un cofre que otro jugador tiene abierto **se salta**, no se toca. Vas a ver el aviso
   "cofre en uso".
-- Para escribir en un cofre ajeno se usa el mismo pedido de permiso que el botÃ³n de apilar
-  del juego: el dueÃ±o del cofre valida y reciÃ©n ahÃ­ cede el control.
+- Para escribir en un cofre ajeno se usa el mismo pedido de permiso que el botón de apilar
+  del juego: el dueño del cofre valida y recién ahí cede el control.
 - Se respetan los cofres privados y los wards, con las mismas reglas que el juego.
 
 ## Limitaciones conocidas
 
-- Si el inventario estÃ¡ lleno, craftear desde cofres puede fallar con el mensaje de "sin
+- Si el inventario está lleno, craftear desde cofres puede fallar con el mensaje de "sin
   espacio" del juego: el material se trae al inventario antes de consumirse y necesita un
   hueco. No se pierde nada.
-- La posiciÃ³n por defecto del botÃ³n puede no ser perfecta segÃºn la resoluciÃ³n o si usÃ¡s otros
+- La posición por defecto del botón puede no ser perfecta según la resolución o si usás otros
   mods de interfaz. Se ajusta con `PosicionX` y `PosicionY`.
 - No conviene usarlo junto a QuickStackStore ni a CraftFromContainers: hacen lo mismo y se
   pisan. El mod avisa en el log si detecta alguno.
 
 ## Registro de movimientos
 
-Por defecto el mod anota en `BepInEx/LogOutput.log` todo lo que mueve, una lÃ­nea por cofre:
+Por defecto el mod anota en `BepInEx/LogOutput.log` todo lo que mueve, una línea por cofre:
 
 ```
 [Info   :   QuickStash] GUARDADO -> Cofre (1243, 31, -678) | 21:15:03 | Madera x40, Piedra x12
 [Info   :   QuickStash] SACADO <- Cofre de hierro (1250, 31, -670) | 21:16:44 | Hierro x10
 ```
 
-Sirve para investigar si alguna vez falta algo: buscÃ¡s el nombre del objeto en el log y ves
-cuÃ¡ndo se moviÃ³, cuÃ¡nto y a quÃ© cofre (la posiciÃ³n estÃ¡ para poder ir a buscarlo al mundo).
-Se apaga con `LogDeMovimientos = false`, pero conviene dejarlo: es el Ãºnico rastro que queda.
+Sirve para investigar si alguna vez falta algo: buscás el nombre del objeto en el log y ves
+cuándo se movió, cuánto y a qué cofre (la posición está para poder ir a buscarlo al mundo).
+Se apaga con `LogDeMovimientos = false`, pero conviene dejarlo: es el único rastro que queda.
+
+Las cargas automáticas de horno **no** se anotan por defecto: son un goteo continuo que taparía
+todo lo demás. Si las querés, activá `Hornos > LogDeCarga` y aparecen con la etiqueta
+`HORNO <-`, para poder separarlas con un buscador.
 

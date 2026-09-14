@@ -1,12 +1,13 @@
-﻿{
+{
   "name": "QuickStash",
-  "version_number": "1.0.3",
+  "version_number": "1.1.0",
   "website_url": "",
   "description": "Boton de guardado rapido en cofres cercanos, favoritos que nunca se guardan, y crafteo usando el material de los cofres de alrededor.",
   "dependencies": [
     "denikson-BepInExPack_Valheim-5.4.2350"
   ]
 }
+
 
 
 

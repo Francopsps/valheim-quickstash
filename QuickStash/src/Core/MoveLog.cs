@@ -52,14 +52,41 @@ namespace QuickStash.Core
 
         public static void RecordSingle(bool intoContainer, Container container, string itemName, int amount)
         {
+            Write(intoContainer ? "GUARDADO ->" : "SACADO <-", container, itemName, amount);
+        }
+
+        /// <summary>
+        /// Los hornos usan su propia etiqueta: al ser un goteo automatico e indefinido, mezclarlo
+        /// con los movimientos que pidio el jugador diluiria justamente el rastro que hay que
+        /// poder buscar cuando falta algo. Con etiqueta propia se separan con un grep.
+        /// </summary>
+        public static void RecordStationFeed(Container container, string itemName, int amount)
+        {
+            if (!PluginConfig.FeedLog.Value)
+            {
+                return;
+            }
+
+            Write("HORNO <-", container, itemName, amount);
+        }
+
+        private static void Write(string label, Container container, string itemName, int amount)
+        {
             if (!PluginConfig.LogMoves.Value || amount <= 0)
             {
                 return;
             }
 
-            string direction = intoContainer ? "GUARDADO ->" : "SACADO <-";
-            Plugin.Log.LogInfo(
-                $"{direction} {Describe(container)} | {DateTime.Now:HH:mm:ss} | {Localize(itemName)} x{amount}");
+            try
+            {
+                Plugin.Log.LogInfo(
+                    $"{label} {Describe(container)} | {DateTime.Now:HH:mm:ss} | {Localize(itemName)} x{amount}");
+            }
+            catch (Exception e)
+            {
+                // Nunca dejar que el log rompa el movimiento que lo origino.
+                Plugin.Log.LogWarning($"No se pudo registrar el movimiento: {e.Message}");
+            }
         }
 
         /// <summary>Nombre del cofre mas su posicion redondeada, para poder ir a buscarlo al mundo.</summary>

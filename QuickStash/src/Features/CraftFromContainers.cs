@@ -32,11 +32,39 @@ namespace QuickStash.Features
                    && player.GetCurrentCraftingStation() != null;
         }
 
+        /// <summary>
+        /// Player.InPlaceMode() es "tiene el martillo equipado" (m_buildPieces != null), NO
+        /// "esta construyendo": con el martillo en la mano y la forja abierta da true igual. Lo
+        /// que de verdad separa los dos modos es que panel esta en pantalla.
+        /// </summary>
+        public static bool IsBuilding(Player player)
+        {
+            return player != null && player.InPlaceMode() && !InventoryGui.IsVisible();
+        }
+
+        /// <summary>Construir con el martillo usando material de los cofres cercanos.</summary>
+        public static bool BuildActive(Player player)
+        {
+            return PluginConfig.Enabled.Value
+                   && PluginConfig.BuildFromContainers.Value
+                   && IsBuilding(player);
+        }
+
+        /// <summary>
+        /// Crafteo y construccion tienen rangos distintos y pueden estar los dos habilitados a
+        /// la vez (martillo equipado + parado en la estacion), asi que el rango lo decide el
+        /// modo en pantalla. Elegirlo aca evita arrastrar un parametro por toda la cadena.
+        /// </summary>
+        private static float ActiveRange(Player player)
+        {
+            return IsBuilding(player) ? PluginConfig.BuildRange.Value : PluginConfig.CraftRange.Value;
+        }
+
         private static void Refresh(Player player)
         {
             ContainerIndex.EnsureFresh(
                 player.transform.position,
-                PluginConfig.CraftRange.Value,
+                ActiveRange(player),
                 ContainerAccess.LocalPlayerId());
         }
 
@@ -107,12 +135,12 @@ namespace QuickStash.Features
         }
 
         /// <summary>Para recetas de un solo ingrediente: ¿hay alguna alternativa cubierta ya en el inventario?</summary>
-        public static bool AnyIngredientCovered(Player player, Recipe recipe, int qualityLevel, int multiplier)
+        public static bool AnyIngredientCovered(Player player, Piece.Requirement[] requirements, int qualityLevel, int multiplier)
         {
             CraftingStation station = player.GetCurrentCraftingStation();
             Inventory inventory = player.GetInventory();
 
-            foreach (Piece.Requirement requirement in recipe.m_resources)
+            foreach (Piece.Requirement requirement in requirements)
             {
                 if (!IsRelevant(requirement, station))
                 {
@@ -136,20 +164,25 @@ namespace QuickStash.Features
         /// </summary>
         public static void PullMissing(Player player, Recipe recipe, int qualityLevel, int itemQuality, int multiplier)
         {
+            PullMissing(player, recipe.m_resources, qualityLevel, itemQuality, multiplier,
+                recipe.m_requireOnlyOneIngredient);
+        }
+
+        public static void PullMissing(Player player, Piece.Requirement[] requirements, int qualityLevel, int itemQuality, int multiplier, bool onlyOneIngredient)
+        {
             CraftingStation station = player.GetCurrentCraftingStation();
             Inventory playerInventory = player.GetInventory();
-            bool onlyOneIngredient = recipe.m_requireOnlyOneIngredient;
             bool pulledAnything = false;
 
             // En recetas de un solo ingrediente el juego consume uno cualquiera de los
             // materiales listados, y le exige a una sola calidad que cubra el total. Si ya hay
             // uno cubierto, no hay nada que traer.
-            if (onlyOneIngredient && AnyIngredientCovered(player, recipe, qualityLevel, multiplier))
+            if (onlyOneIngredient && AnyIngredientCovered(player, requirements, qualityLevel, multiplier))
             {
                 return;
             }
 
-            foreach (Piece.Requirement requirement in recipe.m_resources)
+            foreach (Piece.Requirement requirement in requirements)
             {
                 if (!IsRelevant(requirement, station))
                 {
@@ -200,6 +233,11 @@ namespace QuickStash.Features
             bool pulled = false;
             long playerId = ContainerAccess.LocalPlayerId();
             IReadOnlyList<Container> containers = ContainerIndex.Containers;
+
+            // Excepcion al tope de escritura por accion: aca no hay uno explicito porque el
+            // bucle corta apenas junta lo que falta (missing > 0) y la lista viene ordenada por
+            // distancia, asi que en la practica toca uno o dos cofres. Ademas lo dispara un clic
+            // del jugador, no un ciclo automatico.
 
             // Dos pasadas: primero los cofres que ya son nuestros. Tomar de esos no le quita la
             // propiedad a nadie, asi que reduce mucho las veces que hay que arrebatarla.
@@ -398,9 +436,17 @@ namespace QuickStash.Features
     {
         private static void Postfix(Transform elementRoot, Piece.Requirement req, Player player, bool craft, int quality, int craftMultiplier, bool __result)
         {
-            if (!__result || !craft || req.m_resItem == null ||
-                !PluginConfig.ShowContainerTotals.Value ||
-                !CraftFromContainers.Active(player))
+            // Hud.SetupPieceInfo llama a este mismo metodo para el menu de construccion, y ahi
+            // 'craft' viene en false: ese flag es FreeBuildKey() == NoCraftCost, no "esto es
+            // crafteo". Por eso quien decide es que panel esta en pantalla, no el flag.
+            bool building = CraftFromContainers.IsBuilding(player);
+
+            if (!__result || req.m_resItem == null || !PluginConfig.ShowContainerTotals.Value)
+            {
+                return;
+            }
+
+            if (building ? !CraftFromContainers.BuildActive(player) : (!craft || !CraftFromContainers.Active(player)))
             {
                 return;
             }
@@ -483,7 +529,7 @@ namespace QuickStash.Features
                 // que si el material no alcanzo a llegar hay que frenar aca: dejar seguir al
                 // vanilla es una NullReferenceException dentro del juego.
                 if (recipe.m_requireOnlyOneIngredient &&
-                    !CraftFromContainers.AnyIngredientCovered(player, recipe, qualityLevel, multiplier))
+                    !CraftFromContainers.AnyIngredientCovered(player, recipe.m_resources, qualityLevel, multiplier))
                 {
                     player.Message(MessageHud.MessageType.Center, "$msg_missingrequirement");
                     return false;

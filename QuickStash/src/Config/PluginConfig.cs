@@ -20,7 +20,9 @@ namespace QuickStash.Config
         private const string Interfaz = "3 - Interfaz";
         private const string Favoritos = "4 - Favoritos";
         private const string Crafteo = "5 - Crafteo desde cofres";
-        private const string Rendimiento = "6 - Rendimiento";
+        private const string Construccion = "6 - Construccion desde cofres";
+        private const string Hornos = "7 - Hornos automaticos";
+        private const string Rendimiento = "8 - Rendimiento";
 
         public static ConfigEntry<bool> Enabled;
         public static ConfigEntry<bool> DebugTiming;
@@ -47,7 +49,18 @@ namespace QuickStash.Config
         public static ConfigEntry<float> CraftRange;
         public static ConfigEntry<bool> ShowContainerTotals;
 
+        public static ConfigEntry<bool> BuildFromContainers;
+        public static ConfigEntry<float> BuildRange;
+
+        public static ConfigEntry<bool> FeedStations;
+        public static ConfigEntry<float> FeedRange;
+        public static ConfigEntry<float> FeedIntervalSeconds;
+        public static ConfigEntry<int> FeedMaxPerCycle;
+        public static ConfigEntry<int> FeedMaxStationsPerSecond;
+        public static ConfigEntry<bool> FeedLog;
+
         public static ConfigEntry<int> CacheMs;
+        public static ConfigEntry<int> MaxScanned;
 
         private static HashSet<string> _excluded = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private static Color _favColor = new Color(1f, 0.82f, 0.16f);
@@ -75,7 +88,7 @@ namespace QuickStash.Config
             IncludeOpenContainer = cfg.Bind(Stash, "IncluirCofreAbierto", true,
                 "Si hay un cofre abierto, se usa primero.");
             MaxContainersPerAction = cfg.Bind(Stash, "MaxCofresPorAccion", 32,
-                new ConfigDescription("Tope de cofres que se procesan en una pulsacion. Protege al servidor con muchos jugadores.",
+                new ConfigDescription("Tope de cofres a los que se les ESCRIBE en una pulsacion. Escribir cuesta red, por eso es bajo. El tope de lectura es MaxCofresEscaneados.",
                     new AcceptableValueRange<int>(1, 64)));
             ExcludedItems = cfg.Bind(Stash, "ItemsExcluidos", "",
                 "Nombres de prefab separados por coma que nunca se guardan. Ejemplo: Wood,Stone");
@@ -108,6 +121,33 @@ namespace QuickStash.Config
             ShowContainerTotals = cfg.Bind(Crafteo, "MostrarTotales", true,
                 "Muestra en la receta el total disponible incluyendo los cofres.");
 
+            BuildFromContainers = cfg.Bind(Construccion, "Activado", true,
+                "Permite construir con el martillo usando materiales de los cofres cercanos.");
+            BuildRange = cfg.Bind(Construccion, "Rango", 30f,
+                new ConfigDescription("Distancia en metros para buscar materiales al construir.",
+                    new AcceptableValueRange<float>(2f, 50f)));
+
+            FeedStations = cfg.Bind(Hornos, "Activado", true,
+                "Carga sola la fundicion, el horno de carbon, el alto horno, el molino, la rueca y la refineria de eitr con lo que haya en un cofre al lado.");
+            FeedRange = cfg.Bind(Hornos, "Rango", 10f,
+                new ConfigDescription("Distancia en metros entre el horno y el cofre. Se mide desde el horno, no desde el jugador.",
+                    new AcceptableValueRange<float>(1f, 30f)));
+            FeedIntervalSeconds = cfg.Bind(Hornos, "IntervaloSegundos", 2f,
+                new ConfigDescription("Cada cuanto revisa cada horno. Subirlo baja el uso de CPU.",
+                    new AcceptableValueRange<float>(1f, 30f)));
+            FeedMaxPerCycle = cfg.Bind(Hornos, "MaxPorCiclo", 5,
+                new ConfigDescription("Cuantas unidades carga como mucho por horno en cada revision.",
+                    new AcceptableValueRange<int>(1, 20)));
+
+            FeedMaxStationsPerSecond = cfg.Bind(Hornos, "MaxHornosPorSegundo", 6,
+                new ConfigDescription("Tope global por cliente: cuantos hornos distintos puede atender por segundo. Cada horno atendido implica guardar el cofre del que saco, y eso si viaja por la red.",
+                    new AcceptableValueRange<int>(1, 32)));
+            FeedLog = cfg.Bind(Hornos, "LogDeCarga", false,
+                "Anota tambien en el log cada carga automatica de horno. Apagado por defecto: es un goteo continuo que taparia el resto del registro, que es justamente lo que sirve para investigar faltantes.");
+
+            MaxScanned = cfg.Bind(Rendimiento, "MaxCofresEscaneados", 128,
+                new ConfigDescription("Tope de cofres que se LEEN por consulta. Leer no cuesta red (el inventario ya esta replicado), asi que puede ser alto: es lo que evita que se ignoren cofres cuando hay muchos cerca.",
+                    new AcceptableValueRange<int>(8, 512)));
             CacheMs = cfg.Bind(Rendimiento, "CacheMs", 500,
                 new ConfigDescription("Milisegundos que se reutiliza la busqueda de cofres. Subirlo baja el uso de CPU. El minimo es 100: en cero el indice se reconstruiria varias veces por frame con el panel de crafteo abierto.",
                     new AcceptableValueRange<int>(100, 5000)));

@@ -28,6 +28,7 @@ namespace QuickStash.Core
             // Sin esto una accion a medio terminar deja _running en true y el proximo mundo
             // arranca con el guardado rapido bloqueado hasta que venza el timeout.
             StashService.Reset();
+            StationFeeder.Reset();
         }
     }
 }

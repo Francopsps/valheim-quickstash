@@ -49,6 +49,10 @@ namespace QuickStash.Features
 
         private static int _actionId;
         private static int _awaiting;
+        private static int _requested;
+        private static int _matching;
+        private static int _inRange;
+        private static int _usable;
         private static bool _dispatching;
         private static bool _reported;
         private static bool _running;
@@ -88,6 +92,8 @@ namespace QuickStash.Features
             _containersTouched = 0;
             _denied = 0;
             _awaiting = 0;
+            _requested = 0;
+            _matching = 0;
             _reported = false;
             _startedAt = now;
             _running = true;
@@ -113,9 +119,22 @@ namespace QuickStash.Features
                 ContainerRegistry.Query(
                     player.transform.position,
                     PluginConfig.Range.Value,
-                    PluginConfig.MaxContainersPerAction.Value,
+                    PluginConfig.MaxScanned.Value,
                     playerId,
                     Buffer);
+
+                // Primero se descarta lo que no sirve y RECIEN DESPUES se aplica el tope de
+                // escritura. Al reves (que era el bug), con muchos cofres cerca los que
+                // quedaban fuera del tope no se miraban nunca, aunque fueran los unicos con
+                // ese objeto: por eso los cofres apilados a veces no se tomaban.
+                // Se copian ya: son estaticos del registro y cualquier otra consulta los pisa
+                // (los hornos consultan 1 vez por segundo). El informe puede salir varios frames
+                // despues, cuando llegan las respuestas de los RPC.
+                _inRange = ContainerRegistry.LastInRange;
+                _usable = ContainerRegistry.LastUsable;
+
+                int cap = PluginConfig.MaxContainersPerAction.Value;
+                _matching = 0;
 
                 foreach (Container container in Buffer)
                 {
@@ -123,6 +142,18 @@ namespace QuickStash.Features
                     {
                         continue;
                     }
+
+                    _matching++;
+
+                    // El tope se cuenta con _requested y no con _awaiting: cuando el ZDO ya es
+                    // nuestro la respuesta llega dentro del propio InvokeRPC y baja _awaiting,
+                    // asi que usarlo como tope dejaria mandar mas RPCs de los permitidos.
+                    if (_requested >= cap)
+                    {
+                        continue;
+                    }
+
+                    _requested++;
 
                     // El contador sube ANTES del RPC porque la respuesta puede llegar dentro
                     // de la propia llamada cuando el ZDO ya es nuestro.
@@ -223,6 +254,8 @@ namespace QuickStash.Features
             Buffer.Clear();
             ItemBuffer.Clear();
             _awaiting = 0;
+            _requested = 0;
+            _matching = 0;
             _dispatching = false;
             _running = false;
             _reported = true;
@@ -416,6 +449,8 @@ namespace QuickStash.Features
                 float totalMs = (Time.realtimeSinceStartup - _startedAt) * 1000f;
                 Plugin.Log.LogInfo(
                     $"[stash] {_movedTotal} items -> {_containersTouched} cofres | " +
+                    $"en rango {_inRange} | utilizables {_usable} | " +
+                    $"con coincidencia {_matching} | pedidos {_requested} (tope {PluginConfig.MaxContainersPerAction.Value}) | " +
                     $"sincrono {_syncMs:F2} ms | total {totalMs:F0} ms | rechazados {_denied} | " +
                     $"registro {ContainerRegistry.Count} cofres | peticiones vivas {Requested.Count}");
             }

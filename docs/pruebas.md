@@ -14,7 +14,7 @@ que sigue lo corre una persona en el PC de juego.
 
 ## A. Humo — que cargue
 
-1. Entrar al juego y buscar en `BepInEx\LogOutput.log` la línea `QuickStash 1.0.1 cargado`.
+1. Entrar al juego y buscar en `BepInEx\LogOutput.log` la línea `QuickStash <version> cargado` con la version que acabas de instalar.
 2. **No debe haber** líneas `No se pudo enganchar '<feature>'`. Si aparece alguna, el juego
    cambió ese método: anotar cuál y revalidar contra `docs/api-1.0.7.md`.
 3. **No debe haber** excepciones de Harmony.
@@ -132,3 +132,124 @@ La posición por defecto del botón (arriba a la derecha del panel del inventari
 poder verla. Si queda mal ubicado o choca con otro mod de interfaz, moverlo con `PosicionX` y
 `PosicionY` desde Configuration Manager (F1), sin reiniciar. Anotar los valores que queden bien
 para ponerlos como default.
+
+---
+
+# Pruebas de la 1.1.0
+
+## H. Cofres apilados (el bug que se arregló)
+
+**H1 — el caso que fallaba.** Armar 40 o más cofres dentro de 30 m (apilados sirve), poner el
+**único** cofre con hierro entre los más lejanos del grupo, y guardar hierro desde el inventario.
+- **Correcto:** el hierro entra en ese cofre.
+- Con `LogDeRendimiento = true`, la línea `[stash]` tiene que mostrar `en rango` mayor a 32 y
+  `pedidos` menor o igual a 32. Eso confirma que ahora se leen todos y se le escribe solo a los
+  que hacen falta.
+
+**H2 — el tope de escritura sigue vivo.** Con 40+ cofres que **todos** tengan madera, guardar
+madera. `pedidos` no puede pasar de 32. Si pasa, el tope de red dejó de funcionar.
+
+## I. Construir desde cofres
+
+**I1 — base.** Inventario sin madera ni piedra, un cofre con las dos a menos de 30 m. Sacar el
+martillo: la pieza tiene que aparecer construible (fantasma en azul, no rojo). Colocarla descuenta
+del cofre. Verificar la línea `SACADO <-` en el log.
+
+**I2 — límite de rango.** Alejarse más de `Construccion > Rango` del cofre: la pieza vuelve a
+aparecer como no construible.
+
+**I3 — no se construye gratis.** Sin material ni en el inventario ni en ningún cofre, la pieza no
+se coloca. **Contar** el material antes y después de construir 5 piezas: el descuento total tiene
+que ser exactamente el costo de las 5.
+
+**I4 — colocación fallida.** Apuntar a un lugar inválido (dentro de la roca, fuera de la zona de
+construcción) e intentar colocar. **Falla si:** el material salió del cofre igual. No debería
+moverse nada.
+
+**I5 — inventario lleno.** Con el inventario lleno y el material solo en cofres, intentar
+construir. No debe romperse nada ni construirse gratis.
+
+## J. Hornos automáticos
+
+**J1 — fundición.** Cofre con carbón y mineral de cobre a menos de 10 m de una fundición.
+- Se carga sola en pocos segundos.
+- En el log aparecen líneas `SACADO <-` con el cofre y la cantidad.
+
+**J2 — horno de carbón.** Cofre con madera al lado. Ojo: ahí la madera entra como **mineral**, no
+como combustible (el horno de carbón no tiene `m_fuelItem`).
+
+**J3 — se detiene al llenarse.** Dejar el horno cargado al tope y mirar el cofre: no se le puede
+seguir sacando nada. **Falla si:** el cofre sigue vaciándose.
+
+**J4 — respeta el radio.** Mover el cofre a 15 m del horno: deja de cargarse.
+
+**J5 — no toca lo que no corresponde.** Poner en el mismo cofre objetos que ese horno no acepta
+(por ejemplo comida en una fundición). No se los tiene que llevar.
+
+**J6 — apagado.** Con `Hornos > Activado = false`, nada se mueve solo.
+
+**J7 — cuentas, lo más importante.** Contar exactamente cuánto mineral hay en el cofre, esperar a
+que el horno lo consuma todo, y contar cuántas barras salieron. Las cuentas tienen que cerrar: ni
+material que desaparece ni barras de más.
+
+## K. Hornos en el servidor (dos jugadores)
+
+**K1 — un solo alimentador.** Los dos jugadores con el mod, parados cerca del mismo horno con un
+cofre al lado. Contar el cofre antes y después de un rato. **Falla si:** el consumo del cofre es
+mayor que lo que entró al horno (eso sería doble alimentación).
+
+**K2 — cofre ajeno.** Que el otro jugador sea el dueño del cofre pegado a tu horno (alcanza con
+que lo haya abierto él último). **Comportamiento esperado: el horno NO se alimenta.** Es la
+decisión de diseño, no un bug. Si molesta en la práctica, avisar y se revisa.
+
+**K3 — cofre abierto.** Mientras el otro jugador tiene el cofre abierto, el horno no lo toca.
+
+## L. Construir a costo parcial (lo que encontró la auditoría)
+
+Era el agujero más serio de la 1.1.0: se podía colocar una pieza pagando **solo una parte** del
+costo, porque `Inventory.RemoveItem` descuenta lo que encuentra y sigue en silencio.
+
+**L1 — el caso determinista.**
+1. Dos cofres al lado de una mesa de trabajo: uno con 50 madera fina, otro con 20 cuero de ciervo.
+   Cero de los dos en el inventario.
+2. Llenar el inventario con basura hasta dejar **exactamente un casillero libre**. Contarlo.
+3. Seleccionar la **cama** (8 madera fina + 4 cuero de ciervo). Anotar el contenido de los dos
+   cofres.
+4. Colocarla.
+5. **Correcto:** o no se coloca y sale el mensaje de material faltante, o se coloca y se
+   descuentan los dos materiales completos.
+6. **Falla:** la cama queda construida, salieron 8 madera fina y el cuero **no se movió**.
+
+**L2 — carrera del caché.** Dos jugadores. A con el martillo apuntando a un lugar válido, junto a
+un cofre con exactamente 10 madera. B parado en ese cofre. A la cuenta de tres, B saca las 10 y A
+coloca. Repetir unas 15 veces: ninguna colocación puede salir sin descontar.
+
+**L3 — construcción gratis por global key.** Con `nocost` activado por admin, construir al lado de
+un cofre lleno. **Falla si:** el material sale del cofre igual (la pieza es gratis, no debería
+moverse nada).
+
+## M. Hornos: lo que agregó la auditoría
+
+**M1 — conversión no deseada.** Horno de carbón con un cofre al lado que tenga **un stack de cada
+tipo de madera** (normal, fina, de núcleo, corteza de anciano). Esperar 3-4 ciclos y **anotar
+cuáles desaparecieron**. Eso define qué acepta el horno, que es el dato que no se puede sacar del
+código. Con esa lista se decide qué poner en `ItemsExcluidos`.
+
+**M2 — exclusiones.** Poner `ItemsExcluidos = FineWood` y repetir M1: la madera fina no se toca.
+
+**M3 — tope global.** 20 hornos con cofres al lado y `MaxHornosPorSegundo = 6`. El consumo total
+tiene que ser notoriamente más lento que con el tope en 32. Confirma que la cota actúa.
+
+**M4 — no sobrecarga.** Fundición vacía, cofre al lado con **dos stacks separados** de carbón y
+dos de mineral, `MaxPorCiclo = 20`. El combustible no puede pasar del máximo del horno ni la cola
+de 10.
+
+**M5 — cuentas cerradas.** Cofre con exactamente 100 madera junto a un horno de carbón. Dejarlo
+correr 5 minutos con otro jugador moviéndose cerca. Al final: madera en el cofre + madera en la
+cola + carbón producido tiene que cerrar en 100. Revisar el log por cualquier
+`Fallo al cargar el horno desde los cofres:` — si aparece aunque sea una vez, avisar.
+
+**M6 — tope de escritura del guardado.** Con `MaxCofresEscaneados = 128` y
+`MaxCofresPorAccion = 4`, rodearse de 20 cofres que todos tengan madera y guardar. El log tiene
+que decir `con coincidencia 20 | pedidos 4 (tope 4)`.
+

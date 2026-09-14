@@ -107,3 +107,69 @@ donde `num` es el nivel de calidad y `multiplier` es `m_multiCrafting ? m_multiC
 | `Game.Logout` | `public void Logout(bool save = true, bool changeToStartScene = true)` |
 | `Chat.HasFocus` | `public bool HasFocus()` |
 | `Localize` | MonoBehaviour en `assembly_guiutils`, relocaliza el subárbol al cambiar idioma |
+
+## Smelter (fundicion, horno de carbon, alto horno, molino, rueca, refineria de eitr)
+
+Un solo componente cubre las seis estaciones: todas llevan `Smelter`.
+
+| Miembro | Firma | Notas |
+|---|---|---|
+| `Awake` | `private void Awake()` | Hace `InvokeRepeating("UpdateSmelter", 1f, 1f)`: cadencia de 1 Hz gratis en todos los clientes |
+| `UpdateSmelter` | `private void UpdateSmelter()` | Sale temprano si `!m_nview.IsOwner()`, pero un postfix corre igual: hay que repetir el chequeo de dueño |
+| `IsItemAllowed` | `private bool IsItemAllowed(string itemName)` | Compara contra `m_conversion[].m_from.gameObject.name`, o sea el **nombre de prefab**, no `m_shared.m_name` |
+| `GetFuel` / `SetFuel` | `private float GetFuel()` / `private void SetFuel(float)` | Leen y escriben `ZDOVars.s_fuel` |
+| `GetQueueSize` | `private int GetQueueSize()` | Lee `ZDOVars.s_queued` |
+| `m_fuelItem` | `public ItemDrop` | **Null en el horno de carbon**: ahi la madera entra como mineral, no como combustible |
+| `m_maxOre`, `m_maxFuel` | `public int` | Topes de cola y de combustible |
+| `m_nview` | `private ZNetView` | |
+
+RPCs registrados en `Awake`:
+
+```
+m_nview.Register<string, bool>("RPC_AddOre", RPC_AddOre);   // nombre de prefab + cheated
+m_nview.Register("RPC_AddFuel", RPC_AddFuel);               // suma 1 de combustible
+```
+
+Los dos actúan solo `if (m_nview.IsOwner())`. Siendo dueños, `InvokeRPC` se despacha **local y
+sincronico** (ver `ZRoutedRpc.InvokeRoutedRPC`), asi que quitar del cofre y cargar el horno
+ocurren en la misma pila.
+
+## Construccion (Player)
+
+| Miembro | Firma | Notas |
+|---|---|---|
+| `TryPlacePiece` | `public bool TryPlacePiece(Piece piece)` | Devuelve **antes** de `ConsumeResources`: es la ventana para abastecer el inventario |
+| `HaveRequirements` | `public bool HaveRequirements(Piece piece, RequirementMode mode)` | Sobrecargada con la version de `Recipe`: el atributo de Harmony tiene que especificar los tipos |
+| `RequirementMode` | `enum { CanBuild, IsKnown, CanAlmostBuild }` | `CanBuild` exige la cantidad completa; `CanAlmostBuild` solo que exista al menos uno |
+| `InPlaceMode` | `public override bool InPlaceMode()` | `m_buildPieces != null` |
+
+El flujo de `Player.UpdatePlacement` (~linea 1400):
+
+```csharp
+if (m_noPlacementCost || HaveRequirements(selectedPiece, RequirementMode.CanBuild))
+    if (TryPlacePiece(selectedPiece))
+        ...
+        ConsumeResources(selectedPiece.m_resources, 0);   // qualityLevel 0, multiplicador 1
+```
+
+`Hud.SetupPieceInfo` (linea 1539) reutiliza `InventoryGui.SetupRequirement` para el menu de
+construccion, con `quality: 0` y `craft: piece.FreeBuildKey() == GlobalKeys.NoCraftCost` — ese
+flag **no** significa "esto es crafteo", asi que no sirve para distinguir los dos modos.
+
+## Recipe
+
+| Miembro | Firma | Notas |
+|---|---|---|
+| `GetAmount` | `public int GetAmount(int quality, out int need, out ItemDrop.ItemData singleReqItem, int craftMultiplier = 1)` | **Desreferencia `singleReqItem` sin chequear null** cuando `m_requireOnlyOneIngredient`. Si `GetFirstRequiredItem` devuelve null, tira NRE. El vanilla nunca llega porque el boton de craftear solo se habilita cuando una sola calidad cubre el requisito |
+
+## ZDOMan
+
+| Miembro | Notas |
+|---|---|
+| `ReleaseNearbyZDOS` | Cada 2 s reasigna la propiedad de los ZDO al jugador en cuya area activa estan, pero **solo si estan sin dueño o el dueño actual ya no los tiene en su area**. O sea: la propiedad es pegajosa, no migra al mas cercano mientras el dueño siga en rango |
+| `GetSessionID` | `public static long GetSessionID()` |
+
+Consecuencia practica: en un cliente, `ZNet.instance.GetPeer(uid)` **no ve a los otros
+clientes** (la lista de peers de un cliente solo tiene al servidor), asi que no sirve para
+saber si el dueño de un ZDO es un jugador conectado.
+

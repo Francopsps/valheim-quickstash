@@ -16,7 +16,7 @@ namespace QuickStash
     {
         public const string PluginGuid = "com.valheimcrew.quickstash";
         public const string PluginName = "QuickStash";
-        public const string PluginVersion = "1.0.3";
+        public const string PluginVersion = "1.1.0";
 
         internal static ManualLogSource Log;
 
@@ -43,7 +43,7 @@ namespace QuickStash
         }
 
         /// <summary>
-        /// Se parchea por feature en vez de con un PatchAll global. Ocho de los parches apuntan
+        /// Se parchea por feature en vez de con un PatchAll global. Nueve de los parches apuntan
         /// a metodos privados del juego por nombre en string: si un parche de Valheim renombra
         /// uno solo, un PatchAll global tiraria y el mod entero no cargaria. Asi, un rename
         /// apaga una feature y el resto sigue andando, con el motivo en el log.
@@ -70,6 +70,13 @@ namespace QuickStash
                 typeof(Player_HaveRequirementItems_Patch),
                 typeof(InventoryGui_SetupRequirement_Patch),
                 typeof(InventoryGui_DoCrafting_Patch));
+
+            PatchGroup("construccion desde cofres",
+                typeof(Player_HaveRequirements_Piece_Patch),
+                typeof(Player_TryPlacePiece_Patch));
+
+            PatchGroup("hornos automaticos",
+                typeof(Smelter_UpdateSmelter_Patch));
         }
 
         private void PatchGroup(string feature, params Type[] patchTypes)
@@ -149,5 +156,6 @@ namespace QuickStash
         }
     }
 }
+
 
 

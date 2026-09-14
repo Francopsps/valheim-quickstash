@@ -79,7 +79,9 @@ namespace QuickStash.Core
                 return;
             }
 
-            ContainerRegistry.Query(point, range, PluginConfig.MaxContainersPerAction.Value, playerId, Nearby);
+            // Tope de lectura, no de escritura: este indice solo se usa para saber cuanto hay
+            // disponible, y leer cofres no le cuesta nada al servidor.
+            ContainerRegistry.Query(point, range, PluginConfig.MaxScanned.Value, playerId, Nearby);
 
             Counts.Clear();
             Totals.Clear();
