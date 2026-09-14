@@ -173,3 +173,23 @@ Consecuencia practica: en un cliente, `ZNet.instance.GetPeer(uid)` **no ve a los
 clientes** (la lista de peers de un cliente solo tiene al servidor), asi que no sirve para
 saber si el dueño de un ZDO es un jugador conectado.
 
+## MonsterAI / BaseAI / Tameable (alimentacion de domesticados)
+
+| Miembro | Firma | Notas |
+|---|---|---|
+| `BaseAI.UpdateAI` | `public virtual bool UpdateAI(float dt)` | **Sale temprano si `!m_nview.IsOwner()`**: toda la rama de IA corre solo en el cliente dueno. Da la eleccion de "un solo alimentador" gratis |
+| `MonsterAI.UpdateConsumeItem` | `private bool UpdateConsumeItem(Humanoid, float dt)` | Cada `m_consumeSearchInterval` (10 s) y solo si `m_tamable.IsHungry()` |
+| `MonsterAI.FindClosestConsumableItem` | `private ItemDrop FindClosestConsumableItem(float maxRange)` | `Physics.OverlapSphere` sobre la capa "item": **solo ve objetos en el suelo**, nunca dentro de cofres |
+| `MonsterAI.CanConsume` | `private bool CanConsume(ItemDrop.ItemData item)` | Compara contra `m_consumeItems` por `m_shared.m_name`. Es la lista de comida propia de cada bicho |
+| `MonsterAI.m_consumeRange` / `m_consumeSearchRange` / `m_consumeSearchInterval` | `public float` | 2 / 5 / 10 por defecto |
+| `BaseAI.m_tamable` | `protected Tameable` | Null en los bichos salvajes |
+| `BaseAI.HavePath` | `protected bool HavePath(Vector3 target)` | |
+| `Tameable.IsTamed` / `IsHungry` | `public bool` | |
+| `ItemDrop.DropItem` | `public static ItemDrop DropItem(ItemData item, int amount, Vector3 position, Quaternion rotation)` | Clona el item internamente y fija `m_stack = amount` si `amount > 0` |
+| `ItemDrop.RemoveOne` | `public bool RemoveOne()` | Lo que usa el animal para comer |
+
+El enganche del mod es un postfix de `FindClosestConsumableItem`: cuando el vanilla busco y no
+encontro nada en el suelo, se saca una unidad del cofre y se tira al piso, y el resto del flujo
+vanilla (caminar, comer, resetear hambre, progreso de cria) sigue igual. Es autolimitante: como
+el postfix solo corre si no hay comida cerca, nunca puede acumular comida tirada.
+

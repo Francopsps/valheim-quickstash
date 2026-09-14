@@ -54,3 +54,10 @@ Correcciones de la auditoria previa al reparto. Nada de esto se probo in-game to
   (32) que sigue siendo el de escritura.
 - Los hornos respetan ItemsExcluidos, tienen tope global por segundo, y sus cargas no llenan el
   log salvo que actives Hornos > LogDeCarga.
+
+## 1.2.0 (experimental — rama feature/animales-comen-de-cofres)
+- Los animales domesticados comen de un cofre cercano cuando tienen hambre y no hay nada en el
+  piso. Solo agarran lo que ese animal come normalmente: el filtro es la lista del propio juego.
+- La comida se tira al lado del animal, no del cofre, asi que el cofre puede estar fuera del cerco.
+- Solo actua el cliente dueno del animal y solo usa cofres propios, igual que los hornos.
+

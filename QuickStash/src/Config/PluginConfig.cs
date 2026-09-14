@@ -22,7 +22,8 @@ namespace QuickStash.Config
         private const string Crafteo = "5 - Crafteo desde cofres";
         private const string Construccion = "6 - Construccion desde cofres";
         private const string Hornos = "7 - Hornos automaticos";
-        private const string Rendimiento = "8 - Rendimiento";
+        private const string Animales = "8 - Animales domesticados";
+        private const string Rendimiento = "9 - Rendimiento";
 
         public static ConfigEntry<bool> Enabled;
         public static ConfigEntry<bool> DebugTiming;
@@ -58,6 +59,10 @@ namespace QuickStash.Config
         public static ConfigEntry<int> FeedMaxPerCycle;
         public static ConfigEntry<int> FeedMaxStationsPerSecond;
         public static ConfigEntry<bool> FeedLog;
+
+        public static ConfigEntry<bool> FeedAnimals;
+        public static ConfigEntry<float> AnimalFeedRange;
+        public static ConfigEntry<bool> AnimalLog;
 
         public static ConfigEntry<int> CacheMs;
         public static ConfigEntry<int> MaxScanned;
@@ -144,6 +149,14 @@ namespace QuickStash.Config
                     new AcceptableValueRange<int>(1, 32)));
             FeedLog = cfg.Bind(Hornos, "LogDeCarga", false,
                 "Anota tambien en el log cada carga automatica de horno. Apagado por defecto: es un goteo continuo que taparia el resto del registro, que es justamente lo que sirve para investigar faltantes.");
+
+            FeedAnimals = cfg.Bind(Animales, "Activado", true,
+                "Los animales domesticados comen de un cofre cercano cuando no encuentran comida en el suelo. Solo agarran lo que ese animal come normalmente: el filtro es la lista del propio juego.");
+            AnimalFeedRange = cfg.Bind(Animales, "Rango", 10f,
+                new ConfigDescription("Distancia en metros entre el animal y el cofre. Se mide desde el animal. La comida se tira al lado del animal, asi que el cofre puede estar del otro lado del cerco.",
+                    new AcceptableValueRange<float>(1f, 30f)));
+            AnimalLog = cfg.Bind(Animales, "LogDeComida", false,
+                "Anota tambien en el log cada vez que un animal saca comida de un cofre. Apagado por defecto para no tapar el resto del registro.");
 
             MaxScanned = cfg.Bind(Rendimiento, "MaxCofresEscaneados", 128,
                 new ConfigDescription("Tope de cofres que se LEEN por consulta. Leer no cuesta red (el inventario ya esta replicado), asi que puede ser alto: es lo que evita que se ignoren cofres cuando hay muchos cerca.",
