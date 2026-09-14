@@ -102,3 +102,8 @@ Correcciones de la auditoria de seguridad sobre master.
 ## 1.3.3
 - El rango del guardado rapido baja de 30 a 15 metros.
 
+## 1.3.4
+- Diagnostico para los hornos: con LogDeRendimiento activo, el log explica por que un horno no se
+  carga (no es tuyo, el cofre no es tuyo, el cofre esta marcado en uso, o no hay material).
+  Corre tambien cuando el horno no es tuyo, que es justo el caso que antes quedaba mudo.
+

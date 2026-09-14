@@ -30,6 +30,7 @@ namespace QuickStash.Features
     internal static class StationFeeder
     {
         private static readonly List<Container> Buffer = new List<Container>(16);
+        private static readonly List<Container> DiagBuffer = new List<Container>(16);
         private static readonly List<ItemDrop.ItemData> ItemBuffer = new List<ItemDrop.ItemData>(32);
         private static readonly Dictionary<Smelter, float> NextCheck = new Dictionary<Smelter, float>();
         private static readonly List<Smelter> PruneBuffer = new List<Smelter>(8);
@@ -45,7 +46,7 @@ namespace QuickStash.Features
             }
 
             ZNetView nview = smelter.m_nview;
-            if (nview == null || !nview.IsValid() || !nview.IsOwner())
+            if (nview == null || !nview.IsValid())
             {
                 return;
             }
@@ -64,8 +65,14 @@ namespace QuickStash.Features
                              smelter.GetFuel() < smelter.m_maxFuel;
             bool wantsOre = smelter.GetQueueSize() < smelter.m_maxOre;
 
-            if (!wantsFuel && !wantsOre)
+            // El chequeo de propiedad va DESPUES del diagnostico a proposito: si el horno no es
+            // nuestro salimos, y sin esto el log quedaria mudo justo en el caso que hay que poder
+            // ver. Este postfix si corre en todos los clientes, a diferencia de la IA de los
+            // animales.
+            bool owner = nview.IsOwner();
+            if (!owner || (!wantsFuel && !wantsOre))
             {
+                Diagnose(smelter, owner, wantsFuel, wantsOre, 0);
                 return;
             }
 
@@ -103,6 +110,99 @@ namespace QuickStash.Features
 
                 budget -= FeedFrom(smelter, container, budget);
             }
+
+            if (budget == PluginConfig.FeedMaxPerCycle.Value)
+            {
+                Diagnose(smelter, owner: true, wantsFuel, wantsOre, playerId);
+            }
+        }
+
+        /// <summary>
+        /// Explica en el log por que un horno no se cargo. Sin esto la funcion es una caja negra:
+        /// no hay forma de distinguir "el horno no es tuyo" de "el cofre no es tuyo" de "el cofre
+        /// esta marcado en uso" de "no tiene material".
+        /// </summary>
+        private static void Diagnose(Smelter smelter, bool owner, bool wantsFuel, bool wantsOre, long playerId)
+        {
+            if (!PluginConfig.DebugTiming.Value)
+            {
+                return;
+            }
+
+            Player player = Player.m_localPlayer;
+            if (player == null)
+            {
+                return;
+            }
+
+            // Solo lo que el jugador tiene a la vista: con muchas estaciones cargadas el log se
+            // llenaria de hornos que no esta mirando.
+            float distance = Vector3.Distance(smelter.transform.position, player.transform.position);
+            if (distance > 30f)
+            {
+                return;
+            }
+
+            string name = MoveLog.Localize(smelter.m_name);
+
+            if (!owner)
+            {
+                Plugin.Log.LogInfo(
+                    $"[horno] {name} a {distance:F1} m | dueno del ZDO: NO -> este cliente no lo alimenta " +
+                    "(lo tiene otro jugador o el servidor)");
+                return;
+            }
+
+            if (!wantsFuel && !wantsOre)
+            {
+                Plugin.Log.LogInfo($"[horno] {name} a {distance:F1} m | lleno, no necesita nada");
+                return;
+            }
+
+            ContainerRegistry.Query(
+                smelter.transform.position,
+                PluginConfig.FeedRange.Value,
+                PluginConfig.MaxScanned.Value,
+                playerId,
+                DiagBuffer);
+
+            int ownedChests = 0;
+            foreach (Container container in DiagBuffer)
+            {
+                if (container.m_nview != null && container.m_nview.IsOwner())
+                {
+                    ownedChests++;
+                }
+            }
+
+            int inRange = ContainerRegistry.LastInRange;
+            int usable = ContainerRegistry.LastUsable;
+
+            string reason;
+            if (inRange == 0)
+            {
+                reason = $"no hay ningun cofre a menos de {PluginConfig.FeedRange.Value:F0} m";
+            }
+            else if (usable < inRange)
+            {
+                reason = $"de {inRange} cofre(s) cerca, {inRange - usable} quedaron descartados por " +
+                         "permisos, ward, o por estar marcados EN USO (un cofre con la tapa levantada " +
+                         "que nadie abrio tiene la marca trabada: rompelo y volvelo a poner)";
+            }
+            else if (ownedChests == 0)
+            {
+                reason = $"hay {usable} cofre(s) utilizable(s) pero ninguno es tuyo " +
+                         "(en el servidor la propiedad del ZDO puede estar en otro jugador)";
+            }
+            else
+            {
+                reason = $"hay {ownedChests} cofre(s) tuyo(s) pero ninguno tiene material que este horno acepte";
+            }
+
+            Plugin.Log.LogInfo(
+                $"[horno] {name} a {distance:F1} m | quiere {(wantsFuel ? "combustible" : "")}" +
+                $"{(wantsFuel && wantsOre ? " y " : "")}{(wantsOre ? "mineral" : "")} | " +
+                $"en rango {inRange} | utilizables {usable} | tuyos {ownedChests} -> {reason}");
         }
 
         private static bool TakeGlobalBudget(float now)
@@ -290,6 +390,7 @@ namespace QuickStash.Features
         {
             NextCheck.Clear();
             Buffer.Clear();
+            DiagBuffer.Clear();
             ItemBuffer.Clear();
             _stationsInWindow = 0;
             _budgetWindowStart = 0f;
