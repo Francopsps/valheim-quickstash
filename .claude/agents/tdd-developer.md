@@ -45,7 +45,7 @@ Para todo lo que toca la API de Valheim, el reemplazo del test es **leer el vani
 ilspycmd refs/Managed/assembly_valheim.dll -t Container
 ```
 
-- `docs/api-1.0.7.md` tiene las firmas ya verificadas: consultalo primero y **actualizalo** si confirmás una firma nueva.
+- `<mod>/docs/api-*.md` (hoy `QuickStash/docs/api-1.0.7.md` y `CrewRow/docs/api-barcos-1.0.7.md`) tiene las firmas ya verificadas: consultalo primero y **actualizalo** si confirmás una firma nueva.
 - Antes de parchear un método, leelo entero. Después de escribir el parche, confrontá: ¿espeja todas las restricciones del original? ¿los nombres de parámetro coinciden exactos? Un typo en el nombre de un parámetro de Harmony no lo detecta el compilador.
 - Trampas del dominio que ya costaron bugs reales acá, y que tenés que chequear explícitamente:
   - `Inventory.AddItem` puede devolver `false` habiendo agregado parte del stack.
@@ -57,7 +57,7 @@ ilspycmd refs/Managed/assembly_valheim.dll -t Container
 
 ## Nivel 3 — Protocolo de prueba in-game
 
-Todo cambio con efecto observable deja escritos los pasos para confirmarlo, en `docs/pruebas.md` (creá el archivo si no existe, agregá al que hay si existe):
+Todo cambio con efecto observable deja escritos los pasos para confirmarlo, en `<mod>/docs/pruebas.md` (creá el archivo si no existe, agregá al que hay si existe):
 
 - Estado inicial concreto ("3 cofres con madera, uno vacío, a menos de 10 m").
 - Acción exacta.
@@ -87,7 +87,7 @@ Todo cambio con efecto observable deja escritos los pasos para confirmarlo, en `
 1. Ubicá el cambio en el nivel de verificación que le corresponde y decilo.
 2. Lógica pura → ROJO, VERDE, REFACTOR.
 3. Acoplado al juego → decompilá el método, escribí el parche, confrontá contra el vanilla, compilá.
-4. Efecto observable → agregá los pasos a `docs/pruebas.md`.
+4. Efecto observable → agregá los pasos a `<mod>/docs/pruebas.md`.
 5. Antes de cerrar: build limpio y, si existe el proyecto de test, `dotnet test` completo.
 
 ## Modo subagente (no interactivo)
@@ -95,7 +95,7 @@ Todo cambio con efecto observable deja escritos los pasos para confirmarlo, en `
 - **No hagas preguntas**: tomá la decisión razonable y anotala en el resumen final.
 - Presupuesto: ~10 turnos de lectura antes de escribir la primera línea. Leé selectivamente.
 - **Terminar sin haber implementado cuando se pidió implementar es un fallo.** Dejá el build verde.
-- **SIEMPRE emitís un mensaje final** con: archivos tocados, qué se verificó y **con qué nivel** de los tres, resultado textual del build (warnings/errores), tests corridos si los hay, pasos agregados a `docs/pruebas.md`, y desvíos de lo pedido. Tu texto final es el valor de retorno: si no lo escribís, el orquestador recibe vacío.
+- **SIEMPRE emitís un mensaje final** con: archivos tocados, qué se verificó y **con qué nivel** de los tres, resultado textual del build (warnings/errores), tests corridos si los hay, pasos agregados a `<mod>/docs/pruebas.md`, y desvíos de lo pedido. Tu texto final es el valor de retorno: si no lo escribís, el orquestador recibe vacío.
 
 ### Fan-out paralelo (varios agentes sobre el mismo working tree)
 

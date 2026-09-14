@@ -20,11 +20,12 @@ QuickStash/
     Features/   Guardado rápido, favoritos, crafteo desde cofres
     UI/         Botón del inventario, Alt+clic, bordes de favoritos
   package/      Paquete estilo Thunderstore (manifest, icono, README, changelog)
+  docs/
+    api-1.0.7.md  Firmas de la API de Valheim verificadas por decompilación
+    pruebas.md    Protocolo de prueba in-game
+  agentes/      Definiciones de los agentes de revisión usados en el proyecto
   build.ps1     Compila y arma el zip
-docs/
-  api-1.0.7.md  Firmas de la API de Valheim verificadas por decompilación
-  pruebas.md    Protocolo de prueba in-game
-agentes/        Definiciones de los agentes de revisión usados en el proyecto
+refs/Managed/   Assemblies del juego, compartidos entre mods (no se versionan)
 ```
 
 ## Compilar
@@ -56,7 +57,7 @@ Y para que además copie el DLL a tu instalación y probar al toque:
 
 Valheim 1.0 (9 de septiembre de 2026) cambió parte de su API interna, así que el mod se
 construyó contra los assemblies reales decompilados con `ilspycmd`, no contra documentación.
-Las firmas confirmadas están en [`docs/api-1.0.7.md`](docs/api-1.0.7.md); conviene revalidarlas
+Las firmas confirmadas están en [`QuickStash/docs/api-1.0.7.md`](QuickStash/docs/api-1.0.7.md); conviene revalidarlas
 después de cada parche del juego.
 
 Dos decisiones que explican buena parte del código:

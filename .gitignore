@@ -1,5 +1,5 @@
 # Assemblies del juego. Son archivos de Valheim, pesan cientos de MB y no se redistribuyen:
-# cada quien copia su valheim_Data\Managed a refs\Managed (ver docs/api-1.0.7.md).
+# cada quien copia su valheim_Data\Managed a refs\Managed (ver QuickStash/docs/api-1.0.7.md).
 refs/
 Managed.rar
 
@@ -10,8 +10,12 @@ mods_server/
 **/bin/
 **/obj/
 *.zip
-QuickStash/package/*.dll
-QuickStash/package/*.pdb
+*/package/*.dll
+*/package/*.pdb
 
 # Varios
 *.user
+
+# CrewRow es un repo git aparte que vive adentro de esta carpeta para compartir refs/Managed.
+# Su historia la lleva el, no este repo.
+CrewRow/

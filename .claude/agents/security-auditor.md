@@ -22,7 +22,7 @@ Pensá como el jugador que quiere romperlo: ¿qué pasa si spameo el botón? ¿s
 
 1. `cd "J:\Mod Valheim"` y mirá el estado real. **Este proyecto no es un repo git**: no hay `git diff` ni branches. El scope se define por lo que el orquestador indique o, sin indicación, por todo `QuickStash/src/`.
 2. Priorizá por riesgo, no por orden alfabético: `Features/StashService.cs` y `Features/CraftFromContainers.cs` (mutan inventarios ajenos) → `Core/ContainerAccess.cs` (los permisos) → `Core/ContainerRegistry.cs` y `Core/ContainerIndex.cs` (caches que alimentan decisiones) → `Features/FavoriteStore.cs` (disco) → `UI/`.
-3. **La fuente de verdad de la API del juego es `docs/api-1.0.7.md`** (firmas verificadas decompilando `refs/Managed/assembly_valheim.dll` con `ilspycmd`). Si necesitás confirmar el comportamiento de un método del juego, decompilá vos: `ilspycmd refs/Managed/assembly_valheim.dll -t Container`. **No afirmes cómo se comporta el vanilla sin haberlo leído** — media auditoría de mods se va en suposiciones sobre el juego base.
+3. **La fuente de verdad de la API del juego es `<mod>/docs/api-*.md` (hoy `QuickStash/docs/api-1.0.7.md` y `CrewRow/docs/api-barcos-1.0.7.md`)** (firmas verificadas decompilando `refs/Managed/assembly_valheim.dll` con `ilspycmd`). Si necesitás confirmar el comportamiento de un método del juego, decompilá vos: `ilspycmd refs/Managed/assembly_valheim.dll -t Container`. **No afirmes cómo se comporta el vanilla sin haberlo leído** — media auditoría de mods se va en suposiciones sobre el juego base.
 4. Consultá tu memoria persistente (falsos positivos confirmados, invariantes ya verificados) y actualizala al cerrar.
 
 ## Reglas duras
@@ -167,6 +167,6 @@ Terminá con:
 3. **Invariantes verificados OK** (lista corta: da contexto del alcance real de la auditoría).
 4. **Riesgo residual aceptado**: lo que queda sin cubrir y por qué es tolerable para este grupo de 14.
 5. **Protocolo de prueba in-game** que el humano debería correr para confirmar los hallazgos que no se pueden demostrar estáticamente (pasos concretos, no "probar bien").
-6. **Tu mensaje final ES el entregable** — reporte completo, no resumen. Si podés escribir sin bloqueo, guardá además `docs/security-audit-YYYY-MM-DD.md`.
+6. **Tu mensaje final ES el entregable** — reporte completo, no resumen. Si podés escribir sin bloqueo, guardá además `<mod>/docs/security-audit-YYYY-MM-DD.md`.
 
 Presupuesto: buscá con Grep por patrones y reservá los últimos ~10 turnos para escribir. Reporte incompleto > sin reporte.
