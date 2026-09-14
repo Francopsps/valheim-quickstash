@@ -30,6 +30,7 @@ namespace QuickStash.Core
             StashService.Reset();
             StationFeeder.Reset();
             AnimalFeeder.Reset();
+            AnimalDiagnostics.Reset();
         }
     }
 }

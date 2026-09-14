@@ -16,7 +16,7 @@ namespace QuickStash
     {
         public const string PluginGuid = "com.valheimcrew.quickstash";
         public const string PluginName = "QuickStash";
-        public const string PluginVersion = "1.2.1";
+        public const string PluginVersion = "1.2.2";
 
         internal static ManualLogSource Log;
 
@@ -108,6 +108,7 @@ namespace QuickStash
 
             FavoriteStore.Tick();
             StashService.Tick();
+            AnimalDiagnostics.Tick();
 
             if (PluginConfig.Hotkey.Value.IsDown() && !IsTyping())
             {
