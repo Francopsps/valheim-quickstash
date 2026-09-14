@@ -29,6 +29,8 @@ namespace QuickStash.Core
             // arranca con el guardado rapido bloqueado hasta que venza el timeout.
             StashService.Reset();
             StationFeeder.Reset();
+            AnimalFeeder.Reset();
+            AnimalDiagnostics.Reset();
         }
     }
 }

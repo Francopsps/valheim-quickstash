@@ -1,6 +1,6 @@
 # QuickStash
 
-Mod de cliente para Valheim 1.0. Hace cinco cosas:
+Mod de cliente para Valheim 1.0. Hace seis cosas:
 
 1. **Un botón en el inventario** que manda de golpe a los cofres cercanos los objetos que
    esos cofres ya contienen.
@@ -11,6 +11,8 @@ Mod de cliente para Valheim 1.0. Hace cinco cosas:
    cercanos.
 5. **Hornos automáticos**: un cofre al lado de una fundición o un horno de carbón lo carga solo
    con combustible y mineral.
+6. **Animales que comen del cofre**: los domesticados sacan comida de un cofre cercano cuando
+   tienen hambre.
 
 Está pensado para un servidor con mucha gente: no agrega tráfico de red propio, no toca el
 servidor y nunca escribe en un cofre que otro jugador tenga abierto.
@@ -74,6 +76,23 @@ Otras dos cosas que conviene saber:
 - **Solo actúa el jugador más cercano al horno**, así que aunque los 14 tengan el mod, un horno
   lo alimenta un solo cliente.
 
+### Animales que comen del cofre
+
+Poné un cofre a menos de 10 m de tus jabalíes, lobos o lo que tengas domesticado. Cuando les da
+hambre y no hay comida en el piso, sacan una unidad del cofre y se la comen.
+
+- **Solo agarran lo que ese animal come normalmente.** El filtro es la lista del propio juego
+  (`m_consumeItems`), no una lista nuestra: un jabalí no va a comerse tu carne de lobo.
+- La comida cae **al lado del animal**, no del cofre, así que el cofre puede estar del otro lado
+  del cerco sin problema.
+- Todo lo demás lo hace el juego: la animación, el hambre, y el progreso de domesticación o de
+  cría. Para el juego es exactamente como si se la hubieras tirado vos.
+- **Con que uno solo de ustedes tenga el mod, alcanza.** El mod deja la comida en el piso y
+  después come el animal por su cuenta, con código del juego base: los animales se alimentan
+  aunque el dueño del corral no tenga QuickStash instalado.
+- **Ojo con la cría**: si les dejás comida infinita al lado, se van a reproducir sin parar. Si no
+  querés eso, sacá el cofre o usá `Animales > Activado = false`.
+
 ### Craftear desde cofres
 
 Parado en una estación (forja, mesa de trabajo, etc.), las recetas cuentan también lo que hay
@@ -112,6 +131,11 @@ Lo que probablemente quieras tocar:
 | `Hornos > MaxPorCiclo` | 5 | Cuántas unidades carga por horno en cada revisión |
 | `Hornos > MaxHornosPorSegundo` | 6 | Tope global: cuántos hornos distintos atiende por segundo |
 | `Hornos > LogDeCarga` | false | Anotar también las cargas automáticas en el log |
+| `Animales > Activado` | true | Los domesticados comen del cofre cercano |
+| `Animales > Rango` | 10 | Metros entre el animal y el cofre |
+| `Animales > IntervaloSegundos` | 5 | Cada cuánto se revisan los animales cercanos |
+| `Animales > MaxPorCiclo` | 3 | A cuántos animales se les deja comida por revisión |
+| `Animales > LogDeComida` | false | Anotar en el log cada vez que un animal saca comida |
 | `MaxCofresPorAccion` | 32 | Tope de cofres por pulsación |
 | `LogDeMovimientos` | **true** | Anota en el log cada objeto que se mueve, con cofre, posición y hora |
 | `LogDeRendimiento` | false | Escribe en el log los ms y la cantidad de cofres de cada acción |

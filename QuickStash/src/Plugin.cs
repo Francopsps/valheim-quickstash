@@ -16,7 +16,7 @@ namespace QuickStash
     {
         public const string PluginGuid = "com.valheimcrew.quickstash";
         public const string PluginName = "QuickStash";
-        public const string PluginVersion = "1.1.0";
+        public const string PluginVersion = "1.3.0";
 
         internal static ManualLogSource Log;
 
@@ -77,6 +77,7 @@ namespace QuickStash
 
             PatchGroup("hornos automaticos",
                 typeof(Smelter_UpdateSmelter_Patch));
+
         }
 
         private void PatchGroup(string feature, params Type[] patchTypes)
@@ -105,6 +106,8 @@ namespace QuickStash
 
             FavoriteStore.Tick();
             StashService.Tick();
+            AnimalFeeder.Tick();
+            AnimalDiagnostics.Tick();
 
             if (PluginConfig.Hotkey.Value.IsDown() && !IsTyping())
             {

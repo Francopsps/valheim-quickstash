@@ -70,6 +70,17 @@ namespace QuickStash.Core
             Write("HORNO <-", container, itemName, amount);
         }
 
+        /// <summary>Los animales tienen su propia etiqueta, por el mismo motivo que los hornos.</summary>
+        public static void RecordAnimalFeed(Container container, string itemName, int amount)
+        {
+            if (!PluginConfig.AnimalLog.Value)
+            {
+                return;
+            }
+
+            Write("ANIMAL <-", container, itemName, amount);
+        }
+
         private static void Write(string label, Container container, string itemName, int amount)
         {
             if (!PluginConfig.LogMoves.Value || amount <= 0)

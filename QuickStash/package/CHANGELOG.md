@@ -54,3 +54,26 @@ Correcciones de la auditoria previa al reparto. Nada de esto se probo in-game to
   (32) que sigue siendo el de escritura.
 - Los hornos respetan ItemsExcluidos, tienen tope global por segundo, y sus cargas no llenan el
   log salvo que actives Hornos > LogDeCarga.
+
+## 1.2.0 (experimental — rama feature/animales-comen-de-cofres)
+- Los animales domesticados comen de un cofre cercano cuando tienen hambre y no hay nada en el
+  piso. Solo agarran lo que ese animal come normalmente: el filtro es la lista del propio juego.
+- La comida se tira al lado del animal, no del cofre, asi que el cofre puede estar fuera del cerco.
+- Solo actua el cliente dueno del animal y solo usa cofres propios, igual que los hornos.
+
+## 1.2.1 (experimental)
+- Diagnostico para los animales: con LogDeRendimiento activo, el log explica por que un animal
+  hambriento no comio (no hay cofre, el cofre es de otro jugador, o la comida no le gusta) y
+  vuelca una vez por especie la lista real de lo que come.
+
+## 1.3.0
+- **Arreglado: los animales no comian en el servidor.** El enganche anterior colgaba de la IA del
+  animal, que Valheim solo ejecuta en el cliente dueno de su ZDO. Con varios jugadores, el que
+  esta parado al lado del corral tipicamente NO es el dueno, asi que el codigo no corria nunca.
+- Rediseno: ya no hace falta ser dueno del animal. El mod solo deja la comida en el piso y el
+  cliente que si es dueno se la come con codigo vanilla. Efecto lateral: alcanza con que UNO de
+  los jugadores tenga el mod para que se alimenten los animales de toda la base.
+- Coordinacion entre clientes: solo actua el jugador mas cercano al animal, y no se tira comida
+  si ya hay en el piso.
+- Opciones nuevas: Animales > IntervaloSegundos y Animales > MaxPorCiclo.
+

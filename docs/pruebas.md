@@ -253,3 +253,35 @@ cola + carbón producido tiene que cerrar en 100. Revisar el log por cualquier
 `MaxCofresPorAccion = 4`, rodearse de 20 cofres que todos tengan madera y guardar. El log tiene
 que decir `con coincidencia 20 | pedidos 4 (tope 4)`.
 
+## N. Animales que comen del cofre
+
+El primer intento fallo en el servidor porque el codigo colgaba de la IA del animal, que solo
+corre en el cliente dueno de su ZDO. Estas pruebas van **en el servidor**, no en solitario: en
+solitario sos dueno de todo y el bug original no se reproduce.
+
+**N1 — el caso que fallaba.** Corral con jabalies hambrientos y un cofre TUYO con zanahorias a
+menos de 10 m. Con `LogDeRendimiento = true`, mirar el log.
+- **Correcto:** comen, aunque el barrido siga diciendo `dueno del ZDO: NO`. Esa combinacion es
+  justamente la prueba de que el rediseno funciona.
+- Contar el cofre antes y despues: tiene que bajar exactamente lo que comieron.
+
+**N2 — solo lo que comen.** Carne cruda en el mismo cofre: no la tocan.
+
+**N3 — no se acumula comida.** Mirar el piso un rato: nunca mas de una unidad tirada por animal.
+
+**N4 — cofre fuera del cerco.** A menos de 10 m pero del otro lado de la cerca: funciona igual.
+
+**N5 — rango.** Cofre a 15 m: dejan de comer.
+
+**N6 — dos jugadores con el mod.** Los dos parados en el corral. Contar el cofre: si baja el
+doble de lo que comieron, la eleccion por cercania no esta actuando.
+
+**N7 — un jugador sin el mod.** Que el dueno del corral NO tenga QuickStash y vos si. Los animales
+tienen que comer igual. Es la propiedad nueva del rediseno.
+
+**N8 — cuentas cerradas.** Cofre con exactamente 50 zanahorias. Dejarlo 30 minutos. Zanahorias
+que faltan = veces que comieron. Revisar el log por `Fallo al dar de comer desde el cofre:`.
+
+**N9 — cria.** Con comida disponible se reproducen normalmente. Es lo esperado, pero conviene
+medir a que ritmo antes de dejarlo fijo en el servidor.
+
